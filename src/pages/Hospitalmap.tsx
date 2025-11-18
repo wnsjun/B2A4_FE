@@ -8,6 +8,7 @@ import hospitalImage from "../assets/hospitalmap/hospitalimage.png";
 import MyLocation from "../assets/hospitalmap/mylocation.png";
 import LocationPin from "../assets/hospitalmap/locationpin.png";
 import { debounce } from "lodash";
+import { useKakaoMaps } from "../hooks/useKakaoMaps";
 
 declare global {
   interface Window {
@@ -76,6 +77,7 @@ const HOSPITAL_DATA: Hospital[] = [
 
 const Hospitalmap = () => {
   const navigate = useNavigate();
+  const { isReady: kakaoReady } = useKakaoMaps();
   const [modalOpen, setModalOpen] = useState(true);
   const [selectedHospital, setSelectedHospital] = useState<Hospital | null>(null);
   const [favorites, setFavorites] = useState<Set<number>>(new Set());
