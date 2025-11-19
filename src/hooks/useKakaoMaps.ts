@@ -37,7 +37,7 @@ export const useKakaoMaps = () => {
     // 스크립트 동적 로드
     const script = document.createElement('script');
     script.src =
-      '//dapi.kakao.com/v2/maps/sdk.js?appkey=c35c8c52f9e6328f8b69943513666691&autoload=false';
+      'https://dapi.kakao.com/v2/maps/sdk.js?appkey=c35c8c52f9e6328f8b69943513666691&autoload=false';
     script.async = true;
 
     script.onload = () => {
