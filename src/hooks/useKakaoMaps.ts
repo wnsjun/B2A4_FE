@@ -25,7 +25,7 @@ export const useKakaoMaps = () => {
     if (existingScript) {
       // 기존 스크립트가 있으면 로드 완료 대기
       const checkInterval = setInterval(() => {
-        if (window.kakao && window.kakao.maps) {
+        if (window.kakao && window.kakao.maps && window.kakao.maps.LatLng) {
           setIsReady(true);
           clearInterval(checkInterval);
         }
@@ -37,11 +37,17 @@ export const useKakaoMaps = () => {
     // 스크립트 동적 로드
     const script = document.createElement('script');
     script.src =
-      '//dapi.kakao.com/v2/maps/sdk.js?appkey=c35c8c52f9e6328f8b69943513666691';
+      '//dapi.kakao.com/v2/maps/sdk.js?appkey=c35c8c52f9e6328f8b69943513666691&autoload=false';
     script.async = true;
 
     script.onload = () => {
-      if (window.kakao && window.kakao.maps) {
+      // Kakao Maps SDK의 load 메서드가 있으면 호출
+      if (window.kakao && window.kakao.maps && typeof window.kakao.maps.load === 'function') {
+        window.kakao.maps.load(() => {
+          setIsReady(true);
+        });
+      } else {
+        // Fallback
         setIsReady(true);
       }
     };
