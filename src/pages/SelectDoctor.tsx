@@ -11,7 +11,7 @@ const SelectDoctor = () => {
         setCurrentState(isAdding);
     }
     return (
-        <div>
+        <div className="flex flex-col items-center">
             <WebTopbar text="농민사랑병원" text_img={hospitalImg}/>
             <div className="flex justify-center items-center mt-[122px]">
                 {currentState ? (

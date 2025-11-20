@@ -1,6 +1,9 @@
 import Modal from "../Modal";
 import SelectBox from "./SelectBox"
 import { useMemo, useRef, useState } from "react"
+import axios from "axios";
+const base_URL = import.meta.env.VITE_API_URL;
+const accessToken = "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxNiIsInVzZXJUeXBlIjoiaG9zcGl0YWwiLCJpYXQiOjE3NjM2NDUzNTYsImV4cCI6MTc2MzY1NjE1Nn0.0lwXKnv2VpT0kCCObtDVG7RZIxchMkh6hxpP38nMPGI";
 
 interface AddDoctorProps {
     onComplete: () => void;
@@ -16,6 +19,28 @@ const AddDoctor: React.FC<AddDoctorProps> = ({onComplete}) => {
     const [modal, setModal] = useState(false);
 
     const fileInputRef = useRef<HTMLInputElement>(null);
+
+    const postDoctorInfo = async (data: FormData) => {
+        for (const [key, value] of data.entries()) {
+            console.log(key, value);
+        };
+
+        try {
+            const res = await axios.post(
+                `${base_URL}/api/hospitals/doctors`, data, {
+                    headers: {
+                        "Authorization": `Bearer ${accessToken}`,
+                        "Content-Type": 'multipart/form-data',
+                    }
+                }
+            )
+            console.log("의사 정보 등록 성공", res.data);
+            setModal(true);
+        } catch (error) {
+            console.error("의사 등록 실패 : ", error);
+            alert("의사 등록에 실패했습니다. 다시 시도해주세요.");
+        }
+    }
 
     const handleNameChange = (e : React.ChangeEvent<HTMLInputElement>) => setName(e.target.value);
     const handlePwChange = (e : React.ChangeEvent<HTMLInputElement>) => setPw(e.target.value);
@@ -74,13 +99,17 @@ const AddDoctor: React.FC<AddDoctorProps> = ({onComplete}) => {
             formData.append('image', selectFile);
         }
 
-        formData.append('name', name.trim());
-        formData.append('specialty', subject);
-        formData.append('pinCode', pw);
-        
+        const doctorData = {
+            name: name.trim(),
+            specialty: subject,
+            pinCode: pw,
+        }
 
-        //console.log(`Name: ${formData.get('name')}, Specialty: ${formData.get('specialty')}, PinCode: ${formData.get('pinCode')}, Image File: ${formData.get('image') instanceof File ? selectFile.name : 'Error'}`);
-        setModal(true);
+        const jsonData = new Blob([JSON.stringify(doctorData)], {type: 'application/json'});
+
+        formData.append('request', jsonData);
+        
+        postDoctorInfo(formData);
     }
 
     const handleConfirm = () => {
