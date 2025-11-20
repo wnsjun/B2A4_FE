@@ -29,7 +29,7 @@ const CamQR: React.FC = () => {
                     maxScansPerSecond: 2,
                     highlightScanRegion: true,
                     highlightCodeOutline: true,
-                    preferredCamera: 'user',
+                    preferredCamera: 'environment',
                     onDecodeError: (error) => {
                         console.log(error);
                     }
@@ -95,7 +95,7 @@ const CamQR: React.FC = () => {
                         )}
                         
                         {scanResult && (
-                            <div className="absolute inset-0 flex items-center justify-center bg-green-700/80 text-white p-4 text-center">
+                            <div className="absolute inset-0 flex items-center justify-center bg-black/30 text-white p-4 text-center">
                                 <p className="font-bold">스캔 완료!</p>
                                 <p className="text-sm mt-1 truncate">{scanResult}</p>
                             </div>

@@ -5,6 +5,7 @@ import checkImg from "../../assets/calendar/check.svg";
 import defaultImg from "../../assets/calendar/check_default.svg";
 import { useNavigate } from "react-router-dom";
 import Modal from "../Modal";
+const accessToken = "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIzIiwidXNlclR5cGUiOiJwYXRpZW50IiwiaWF0IjoxNzYzNjE0NjgzLCJleHAiOjE3NjM2MjU0ODN9.1kMfm-jJKZvEnx8lJ4r3Ikt2VM_kZsJefj7zBDoNz4g";
 
 export interface MedicalTreatment {
   year: number;

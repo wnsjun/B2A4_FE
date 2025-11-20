@@ -36,6 +36,8 @@ const Calendar = () => {
         setSelectedDay(format(day, "dd"));
         setIsClicked(true);
 
+        
+
         setDailyRecordData(mockDailyRecord);
     }
 
