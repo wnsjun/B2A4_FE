@@ -33,6 +33,7 @@ const HospitalProfileEdit = () => {
   const [currentStep, setCurrentStep] = useState(1);
   const [selectedDays, setSelectedDays] = useState<(keyof IOperatingTime)[]>([]);
   const nav = useNavigate();
+  const [isLoading, setIsLoading] = useState(true);
 
   //폼 데이터를 객체로 관리
   const [formData, setFormData] = useState<IFormData>({
@@ -49,32 +50,41 @@ const HospitalProfileEdit = () => {
       const myId = localStorage.getItem('hospitalId');
 
       if (!myId) {
-        alert('로그인 정보가 없습니다. 다시 로그인해주세요.');
+        // ID가 없으면 경고 후 로그인 페이지로 튕겨냄
+        alert('로그인 정보가 유효하지 않습니다.');
         nav('/login');
-      } else
-        try {
-          const response = await getHospitalInfoApi(myId);
-          const data = response.data || response;
+        return;
+      }
 
-          const convertedTime = reverseTransformOperatingData(data.operatingTime, data.breakTimes);
-          const activeDays = Object.keys(convertedTime).filter(
-            (key) => convertedTime[key as keyof IOperatingTime] !== null
-          ) as (keyof IOperatingTime)[];
+      try {
+        // 1. API 호출
+        const response = await getHospitalInfoApi(myId);
+        const data = response.data || response;
 
-          setSelectedDays(activeDays);
+        // 2. 데이터 처리 및 변환
+        const convertedTime = reverseTransformOperatingData(data.operatingTime, data.breakTimes);
 
-          setFormData({
-            hospitalName: data.name,
-            subject: data.specialties ? data.specialties[0] : '', // 배열이면 첫번째
-            address: data.address,
-            contactNumber: data.contact,
-            operatingTime: convertedTime,
-            mainImage: null, // ⚠️ 기존 이미지는 File 객체가 아니라 URL이라 input에 못 넣음 (null 유지)
-          });
-        } catch (error) {
-          console.error('정보 불러오기 실패:', error);
-          alert('정보를 불러오지 못했습니다.');
-        }
+        const activeDays = Object.keys(convertedTime).filter(
+          (key) => convertedTime[key as keyof IOperatingTime] !== null
+        ) as (keyof IOperatingTime)[];
+
+        // 3. 상태 업데이트
+        setFormData({
+          hospitalName: data.name,
+          subject: data.specialties ? data.specialties[0] : '',
+          address: data.address,
+          contactNumber: data.contact,
+          operatingTime: convertedTime,
+          mainImage: null,
+        });
+        setSelectedDays(activeDays);
+      } catch (error) {
+        console.error('정보 불러오기 실패:', error);
+        alert('병원 정보를 불러오지 못했습니다. 콘솔을 확인해주세요.');
+      } finally {
+        // 4. 로딩 끝! (성공/실패와 관계없이 UI를 보여줌)
+        setIsLoading(false);
+      }
     };
 
     fetchHospitalInfo();

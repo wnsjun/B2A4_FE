@@ -164,7 +164,7 @@ const HospitalProfile = () => {
               children="수정"
               variant="default"
               className="w-full"
-              onClick={() => nav('/hospital-profile-edit')}
+              onClick={() => nav(`/hospital-profile-edit/${hospitalId}`)}
             />
           </div>
         </div>

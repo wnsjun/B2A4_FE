@@ -2,7 +2,7 @@ import Logo from '../components/TypoLogo';
 import logoutImg from '../assets/webTopbar/logout.svg';
 import doctorReselectImg from '../assets/webTopbar/doctor-reselect.svg';
 import { useNavigate } from 'react-router-dom';
-import { logoutHospitalApi, getHospitalInfoApi } from '../apis/auth';
+import { logoutHospitalApi } from '../apis/auth';
 import { useAuthStore } from '../hooks/useAuthStore';
 import { useState, useEffect } from 'react';
 
