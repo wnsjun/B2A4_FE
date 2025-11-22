@@ -12,7 +12,7 @@ interface AuthState {
 // 2. 액션(Actions)의 타입 정의
 interface AuthActions {
   setAccessToken: (token: string) => void;
-  setTokens: (accessToken: string, refreshToken: string) => void;
+  setTokens: (accessToken: string, refreshToken: string | null) => void;
   clearAuth: () => void;
 }
 

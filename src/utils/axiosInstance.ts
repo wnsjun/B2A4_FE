@@ -11,6 +11,7 @@ export const instance = axios.create({
 instance.interceptors.request.use(
   (config) => {
     const { accessToken } = useAuthStore.getState();
+    console.log('🔍 인터셉터 작동! 토큰:', accessToken);
     if (accessToken) {
       config.headers.Authorization = `Bearer ${accessToken}`;
     }
@@ -19,14 +20,14 @@ instance.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-instance.interceptors.response.use(
-  (reponse) => reponse,
-  (error) => {
-    if (error.reponse?.status == 401) {
-      console.log('401: 토큰 만료 또는 인증 오류');
-    }
-    return Promise.reject(error);
-  }
-);
+// instance.interceptors.response.use(
+//   (reponse) => reponse,
+//   (error) => {
+//     if (error.reponse?.status == 401) {
+//       console.log('401: 토큰 만료 또는 인증 오류');
+//     }
+//     return Promise.reject(error);
+//   }
+// );
 
 export default instance;

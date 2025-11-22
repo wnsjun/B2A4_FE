@@ -9,11 +9,14 @@ interface LoginPayload {
 interface LoginResponse {
   isSuccess: boolean;
   message: string;
-  patientId: string;
-  name: string;
-  accessToken: string;
-  refreshToken: string;
-  imageUrl?: string;
+  data: {
+    accessToken: string;
+    refreshToken?: string | null; // 백엔드에서 안 줄 수도 있으니 ?(선택) 붙임
+    role?: string;
+    name?: string;
+    loginId?: string;
+    imageUrl?: string;
+  };
 }
 
 interface SignupPatientPayload {
@@ -39,10 +42,8 @@ export const loginPatientApi = async (payload: LoginPayload) => {
 };
 
 export const logoutPatientApi = async () => {
-  await instance.post('/api/patients/login');
-  useAuthStore.getState().clearAuth();
-  localStorage.removeItem('accessToken');
-  localStorage.removeItem('refreshToken');
+  const response = await instance.post('/api/patients/logout', {});
+  return response.data;
 };
 
 export const loginHospitalApi = async (payload: LoginPayload) => {
@@ -51,10 +52,8 @@ export const loginHospitalApi = async (payload: LoginPayload) => {
 };
 
 export const logoutHospitalApi = async () => {
-  await instance.post('/api/hospitals/login');
-  useAuthStore.getState().clearAuth();
-  localStorage.removeItem('accessToken');
-  localStorage.removeItem('refreshToken');
+  const response = await instance.post('/api/hospitals/logout');
+  return response.data;
 };
 
 export const signupPatientApi = async (payload: SignupPatientPayload) => {

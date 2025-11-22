@@ -2,7 +2,7 @@ import React from 'react';
 import { useState } from 'react';
 import Button from '../components/Button';
 import { expereinceText, headerText } from '../styles/typography';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import Topbar from '../layouts/Topbar';
 
 const FirstPage = ({ first = false, name = '' }) => {
@@ -107,6 +107,7 @@ const FourthPage = () => {
 };
 
 const Service = () => {
+  const nav = useNavigate();
   const location = useLocation();
   const [currentPage, setCurrentPage] = useState(0);
   const receivedName = (location.state as { fromSignup?: boolean; userName?: string })?.userName;
@@ -190,7 +191,12 @@ const Service = () => {
         </div>
         {isFirstVisit ? (
           <div className="flex justify-center items-center">
-            <Button variant={currentPage === 3 ? 'colored' : 'default'}>확인</Button>
+            <Button
+              variant={currentPage === 3 ? 'colored' : 'default'}
+              onClick={() => nav('/hospitalmap')}
+            >
+              확인
+            </Button>
           </div>
         ) : (
           <></>

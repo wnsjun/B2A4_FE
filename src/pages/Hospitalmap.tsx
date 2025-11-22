@@ -44,33 +44,33 @@ const HOSPITAL_DATA: Hospital[] = [
     lat: 37.5560379420754,
     lng: 126.924462416982,
     image: hospitalImage,
-    name: "농인사랑병원",
-    department: "외과·정형외과",
-    address: "서울특별시 마포구 양화로 188 (동교동)",
-    hours: { day: "월", startTime: "09:00", endTime: "18:00" },
-    phone: "02-789-9800",
+    name: '농인사랑병원',
+    department: '외과·정형외과',
+    address: '서울특별시 마포구 양화로 188 (동교동)',
+    hours: { day: '월', startTime: '09:00', endTime: '18:00' },
+    phone: '02-789-9800',
   },
   {
     id: 2,
     lat: 37.5553020767532,
     lng: 126.923590029183,
     image: hospitalImage,
-    name: "마포의료센터",
-    department: "내과·외과",
-    address: "서울특별시 마포구 양화로 200",
-    hours: { day: "월", startTime: "08:00", endTime: "19:00" },
-    phone: "02-789-9801",
+    name: '마포의료센터',
+    department: '내과·외과',
+    address: '서울특별시 마포구 양화로 200',
+    hours: { day: '월', startTime: '08:00', endTime: '19:00' },
+    phone: '02-789-9801',
   },
   {
     id: 3,
     lat: 37.5545808852364,
     lng: 126.922708589618,
     image: hospitalImage,
-    name: "동교병원",
-    department: "정형외과",
-    address: "서울특별시 마포구 양화로 180",
-    hours: { day: "월", startTime: "09:30", endTime: "18:30" },
-    phone: "02-789-9802",
+    name: '동교병원',
+    department: '정형외과',
+    address: '서울특별시 마포구 양화로 180',
+    hours: { day: '월', startTime: '09:30', endTime: '18:30' },
+    phone: '02-789-9802',
   },
 ];
 
@@ -119,6 +119,9 @@ const Hospitalmap = () => {
 
     const container = document.getElementById(`map`);
     if (!container) return;
+    if (!window.kakao || !window.kakao.maps) {
+      return;
+    }
 
     const options = {
       center: new window.kakao.maps.LatLng(center.lat, center.lng),
@@ -129,7 +132,7 @@ const Hospitalmap = () => {
     mapRef.current = map;
 
     // 지도 중심 이동 이벤트 리스너
-    window.kakao.maps.event.addListener(map, "center_changed", () => {
+    window.kakao.maps.event.addListener(map, 'center_changed', () => {
       updateCenterWhenMapMoved(map);
     });
 
@@ -143,8 +146,8 @@ const Hospitalmap = () => {
       markersRef.current.push(marker);
 
       // 마커 클릭 이벤트
-      window.kakao.maps.event.addListener(marker, "click", () => {
-        console.log("마커 클릭:", hospital.name);
+      window.kakao.maps.event.addListener(marker, 'click', () => {
+        console.log('마커 클릭:', hospital.name);
         setSelectedHospital({
           ...hospital,
           isFavorite: favorites.has(hospital.id),
@@ -168,7 +171,9 @@ const Hospitalmap = () => {
 
         // 지도 포커싱
         if (mapRef.current) {
-          mapRef.current.setCenter(new window.kakao.maps.LatLng(userLocation.lat, userLocation.lng));
+          mapRef.current.setCenter(
+            new window.kakao.maps.LatLng(userLocation.lat, userLocation.lng)
+          );
         }
       },
       (error) => {
@@ -227,7 +232,7 @@ const Hospitalmap = () => {
         const marker = new window.kakao.maps.Marker({
           position: new window.kakao.maps.LatLng(position.lat, position.lng),
           map: mapRef.current,
-          title: "내 위치",
+          title: '내 위치',
           image: new window.kakao.maps.MarkerImage(
             LocationPin,
             new window.kakao.maps.Size(32, 32),
@@ -239,7 +244,9 @@ const Hospitalmap = () => {
         myLocationMarkerRef.current = marker;
       } else {
         // 기존 마커 위치 업데이트
-        myLocationMarkerRef.current.setPosition(new window.kakao.maps.LatLng(position.lat, position.lng));
+        myLocationMarkerRef.current.setPosition(
+          new window.kakao.maps.LatLng(position.lat, position.lng)
+        );
       }
     }
   }, [position, showMyLocationMarker]);
@@ -291,7 +298,9 @@ const Hospitalmap = () => {
 
       <Topbar showLogo={true} onStarClick={() => navigate('/favorite-hospitals')} />
       <div className="w-[360px] h-[50px] bg-white flex items-center px-5 py-2.5">
-        <span className="text-sm text-[#1A1A1A] font-['Pretendard']">손빛이 닿는 병원을 찾아보세요</span>
+        <span className="text-sm text-[#1A1A1A] font-['Pretendard']">
+          손빛이 닿는 병원을 찾아보세요
+        </span>
       </div>
       <div className="relative w-[360px] h-[510px]">
         <div id="map" className="w-full h-full" />
