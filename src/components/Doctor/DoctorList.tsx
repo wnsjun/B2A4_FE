@@ -3,10 +3,7 @@ import addImg from "../../assets/doctor/add_doctor.svg";
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Modal from "../Modal";
-import axios from "axios";
-const base_URL = import.meta.env.VITE_API_URL;
-const accessToken = "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxNiIsInVzZXJUeXBlIjoiaG9zcGl0YWwiLCJpYXQiOjE3NjM2NDUzNTYsImV4cCI6MTc2MzY1NjE1Nn0.0lwXKnv2VpT0kCCObtDVG7RZIxchMkh6hxpP38nMPGI";
-
+import { fetchDoctorList, postDocPincode } from "../../apis/DoctorAPI";
 
 export interface Doctor {
     doctorId: number;
@@ -31,60 +28,39 @@ const DoctorList: React.FC<DoctorListProps> = ({onAddDoctor}) => {
     const [pw, setPw] = useState("");
     const [isValid, setIsValid] = useState(true);
 
-    const postDocPincode = async () => {
+    useEffect(() => {
+        const loadDoctorList = async () => {
+            try {
+                const list = await fetchDoctorList();
+                setDoctorListData(list.data);
+            } catch (error) {
+                console.error(error);
+                setDoctorListData([]);
+            }
+        }
+        loadDoctorList();
+    }, []);
+
+    const submitPincode = async () => {
+        if (selectDocId === null) return;
         try {
-            const res = await axios.post(`${base_URL}/api/hospitals/doctors/select-doctor`,
-                {
-                    doctorId : selectDocId,
-                    pinCode: pw,
-                }, {
-                    headers: {
-                        "Authorization": `Bearer ${accessToken}`,
-                    }
-                }
-            )
-            console.log("의사 암호 전송 성공", res.data);
+            await postDocPincode(selectDocId, pw);
             setIsButtonClicked(false);
             setIsValid(true);
-            setPw(""); 
-
+            setPw("");
             nav("/qr-checkin", {state: {DoctorData: selectedDoctor}});
-            console.log(selectedDoctor);
         } catch (error) {
-            console.error("암호 전송 실패 : ", error);
+            console.error("암호 전송 실패: ", error);
             setIsValid(false);
         }
     }
 
-    useEffect(() => {
-        const fetchDoctorList = async () => {
-            try {
-                const res = await axios.get(`${base_URL}/api/hospitals/doctors`, {
-                    headers: {
-                        "Authorization": `Bearer ${accessToken}`
-                    }
-                })
-
-                console.log("의사 목록 조회 성공 : ", res.data.data);
-                setDoctorListData(res.data.data);
-            } catch (error) {
-                console.error(error);
-
-            }
-        }
-        fetchDoctorList();
-    }, []);
-    
-
     const onChangeInput = (e: React.ChangeEvent<HTMLInputElement>) => {
         setName(e.target.value)
-
-        //console.log(name);
     }
 
     const onChangePw = (e: React.ChangeEvent<HTMLInputElement>) => {
         setPw(e.target.value);
-        //setIsValid(false);
     }
 
     const searchDoctor = useMemo(() => {
@@ -121,7 +97,7 @@ const DoctorList: React.FC<DoctorListProps> = ({onAddDoctor}) => {
 
     const handleConfirm = () => {
         console.log("암호 확인", pw);
-        postDocPincode();
+        submitPincode();
     }
 
     const singleButton = [

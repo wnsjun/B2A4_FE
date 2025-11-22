@@ -5,11 +5,8 @@ import CalendarCells from "../components/Calendar/CalendarCells";
 import Bottombar from "../layouts/Bottombar";
 import DailyRecord from "../components/Calendar/DailyRecord";
 import { useEffect, useState } from "react";
-import { mockMedicationData, mockMedicalTreatment } from "../mock/MedicationData";
-import axios from "axios";
-
-const base_URL = import.meta.env.VITE_API_URL;
-const accessToken = "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIzIiwidXNlclR5cGUiOiJwYXRpZW50IiwiaWF0IjoxNzYzNjUxNTA5LCJleHAiOjE3NjM2NjIzMDl9.Pt8lZB0m9sZ-jnuFRnzdAP-aCYENv2jD-g-F2nTNKYo";
+//import { mockMedicationData, mockMedicalTreatment } from "../mock/MedicationData";
+import { fetchAllTreatment, fetchDailyRecord, fetchDailyTreatment } from "../apis/CalendarAPi";
 
 
 export interface MedicalTreatment {
@@ -20,36 +17,49 @@ export interface MedicalTreatment {
 
 const Calendar = () => {
     const currentDate = new Date();
+    const currentYear = new Date().getFullYear();
+    const currentMonth = new Date().getMonth();
 
     const [selectedMonth, setSelectedMonth] = useState("");
     const [selectedDay, setSelectedDay] = useState("");
     const [isClicked, setIsClicked] = useState(false);
 
     const [calendarMedData, setCalendarMedData] = useState<Record<string, {hasMed: boolean} >>({});
-    const [dailyRecordData, setDailyRecordData] = useState<any>(null);
     const [calendarMedTreat, setCalendarMedTreat] = useState<MedicalTreatment | null>(null);
+    const [dailyRecordData, setDailyRecordData] = useState<any>(null);
+    const [dailyTreatmentData, setDailyTreatmentData] = useState<any>(null);
 
-    const fetchDailyRecord = async (date: string) => {
+    const loadDailyRecord = async (date: string) => {
+        
         try {
-            const res = await axios.get(
-                `${base_URL}/api/patients/medications?date=${date}`, {
-                    headers: {
-                        'Authorization': `Bearer ${accessToken}`,
-                        // 'Content-Type': 'application/json'
-                    }
-                }
-            )
-            console.log("전송 성공:", res.data);
-            setDailyRecordData(res.data.data)
-        } catch (error) {
-            console.error("날짜별 복약 일정 조회 실패: ", error);
+            const data = await fetchDailyRecord(date);
+            const treatment = await fetchDailyTreatment(date);
+            setDailyRecordData(data.data);
+            setDailyTreatmentData(treatment.data);
             
+        } catch (error) {
+            console.error("복약 일정 데이터 로드 중 오류: ", error);
+            setDailyRecordData(null);
+            setDailyTreatmentData(null);
         }
     }
 
+
     useEffect(() => {
-        setCalendarMedData(mockMedicationData);
-        setCalendarMedTreat(mockMedicalTreatment);
+        const yearstr = currentYear.toString();
+        const monthstr = (currentMonth + 1).toString();
+        const loadAllTreatment = async (year: string, month: string) => {
+            try {
+                const allTreatment = await fetchAllTreatment(year, month);
+                //console.log(allTreatment.data.dates);
+                setCalendarMedTreat(allTreatment.data);
+                setCalendarMedData({});
+            } catch (error) {
+                console.log("error", error);
+                setCalendarMedTreat(null);
+            }
+        }
+        loadAllTreatment(yearstr, monthstr);
     }, []);
     
     const onDateClick = (day: Date) => {
@@ -60,9 +70,7 @@ const Calendar = () => {
         setIsClicked(true);
         
         console.log(dateString);
-        fetchDailyRecord(dateString);
-
-        //setDailyRecordData(mockDailyRecord);
+        loadDailyRecord(dateString);
     }
 
     return (
@@ -87,7 +95,7 @@ const Calendar = () => {
                 onDateClick={onDateClick} 
                 isClicked={isClicked} 
                 recordData={dailyRecordData}
-                calendarMedTreat = {calendarMedTreat}
+                medTreatData = {dailyTreatmentData}
             />
         </div>
         

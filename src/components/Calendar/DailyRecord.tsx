@@ -5,13 +5,28 @@ import checkImg from "../../assets/calendar/check.svg";
 import defaultImg from "../../assets/calendar/check_default.svg";
 import { useNavigate } from "react-router-dom";
 import Modal from "../Modal";
+import { deleteMedAll, updateMed } from "../../apis/CalendarAPi";
+
 
 export interface MedicalTreatment {
-  year: number;
-  month: number;
-  dates: string[];
+  chatRoodId: number;
+  hospitalId: number;
+  hospitalName: string;
+  doctorId: number;
+  doctorName: string;
+  specialty: string;
+  status: string;
+  startedAt: string;
+  finishedAt: string;
+  symptomSummary: string;
+  diagnosisSummary: string;
 }
 
+export interface dailyRecord {
+    date: string;
+    period: string;
+    taken: boolean;
+}
 
 const mapPeriod = (period: string) : string => {
     switch (period.toLowerCase()) {
@@ -60,10 +75,10 @@ interface Props {
     onDateClick : (day: Date) => void,
     isClicked : boolean,
     recordData: any[],
-    calendarMedTreat?: MedicalTreatment | null;
+    medTreatData?: MedicalTreatment | null;
 }
 
-const DailyRecord = ({selectedMonth, selectedDay, isClicked, recordData, calendarMedTreat} : Props) => {
+const DailyRecord = ({selectedMonth, selectedDay, isClicked, recordData, medTreatData} : Props) => {
     const nav = useNavigate();
 
     const medicationRecords = recordData || [];
@@ -75,9 +90,13 @@ const DailyRecord = ({selectedMonth, selectedDay, isClicked, recordData, calenda
     const [openEditModal, setOpenEditModal] = useState(false);
     const [openDelModal, setOpenDelModal] = useState(false);
     const [openSubModal, setSubModal] = useState(false);
+    const [treatmentSummary, setTreatmentSummary] = useState("");
+    const [startTime, setStartTime] = useState("");
 
     const [selectedMedicationId, setSelectedMedicationId] = useState<number | null>(null);
     const [modalCheckedStatus, setModalCheckedStatus] = useState<Record<number, boolean>>({});
+    const currentYear = new Date().getFullYear();
+    const formattedDate = `${currentYear}-${String(selectedMonth).padStart(2, '0')}-${String(selectedDay).padStart(2, '0')}`;
 
     const handleConfirm = () => {
         setOpenEditModal(false);
@@ -92,8 +111,20 @@ const DailyRecord = ({selectedMonth, selectedDay, isClicked, recordData, calenda
         setOpenDelModal(false);
         setSubModal(true);
     }
-
-    const handleDeleteAll = () => {
+    
+    const handleDeleteAll = async () => {
+        const recordId = selectedMedicationId;
+        if (recordId === null) {
+            alert("삭제할 복약 일정이 선택되지 않았습니다.");
+            return;
+        }
+            
+        try {
+            await deleteMedAll(recordId, formattedDate);
+            
+        } catch (error) {
+            alert("복약 일정 삭제에 실패했습니다.");
+        }
         setSubModal(false);
     }
 
@@ -120,9 +151,7 @@ const DailyRecord = ({selectedMonth, selectedDay, isClicked, recordData, calenda
         { label: '모든 일정 삭제', onClick: handleDeleteAll, variant: 'default' as const,},
         { label: '이 일정만 삭제', onClick: handleDeleteOnly, variant: 'colored' as const,}
     ]
-
     
-    // recordData 변경될 때마다 체크 상태 초기화
     useEffect(() => {
         const initialStatus: Record<number, boolean> = {};
         medicationRecords.forEach((med: any) => {
@@ -135,20 +164,23 @@ const DailyRecord = ({selectedMonth, selectedDay, isClicked, recordData, calenda
 
     }, [recordData]);
 
+    console.log(medTreatData);
+    
     useEffect(() => {
         let recordExists = false;
 
-        if (calendarMedTreat && selectedMonth && selectedDay) {
-            const currentYear = calendarMedTreat.year;
-            const formatMonth = String(selectedMonth).padStart(2, '0');
-            const formatDay = String(selectedDay).padStart(2, '0');
-
-            const selectedDate = `${currentYear}-${formatMonth}-${formatDay}`;
-
-            recordExists = calendarMedTreat.dates.includes(selectedDate);
+        if (medTreatData) {
+            setTreatmentSummary(medTreatData.diagnosisSummary);
+            const timeOnly = medTreatData.startedAt.split('T')[1].split('.')[0];
+            console.log(timeOnly);
+            const h = timeOnly.split(':')[0];
+            const m = timeOnly.split(':')[1];
+            const time = h + ":" + m;
+            setStartTime(time);
+            recordExists = true;
         }
         setHasMedicalRecord(recordExists);
-    }, [calendarMedTreat, selectedMonth, selectedDay]);
+    }, [medTreatData]);
 
 
     const onToggle = () => setIsOpen(!isOpen);
@@ -162,13 +194,32 @@ const DailyRecord = ({selectedMonth, selectedDay, isClicked, recordData, calenda
 
 
     // 복약 체크 클릭 핸들러: 해당 스케줄 ID의 상태를 토글
-    const onClickCheck = (scheduleId: number) => () => {
-        setCheckedStatus(prevStatus => ({
-            ...prevStatus,
-            [scheduleId]: !prevStatus[scheduleId]
-        }));
+    const onClickCheck = (scheduleId: number) => async () => {
+        const newStatus = !checkedStatus[scheduleId];
+        let period = "";
+        let targetRecordId = "";
+
+        for (const med of medicationRecords) {
+            const schedule = med.schedules.find((s: any) => s.scheduleId === scheduleId);
+            if (schedule) {
+                period = schedule.period;
+                targetRecordId = med.recordId;
+                break;
+            }
+        }
+        
+        try {
+            await updateMed(targetRecordId, newStatus, formattedDate, period);
+
+            setCheckedStatus(prevStatus => ({
+                ...prevStatus,
+                [scheduleId] : newStatus
+            }));
+            
+        } catch (error) {
+            alert("복욕 상태 변경 실패");
+        }
     }
-    //console.log(checkedStatus);
 
     return (
         <div className="h-[190px] flex justify-center">
@@ -205,10 +256,10 @@ const DailyRecord = ({selectedMonth, selectedDay, isClicked, recordData, calenda
                             <>
                             <div className="flex flex-col my-4 gap-1">
                                 <div>
-                                    복통 및 어지러움 호소
+                                    {treatmentSummary}
                                 </div>
                                 <div className="text-[#666B76] text-[12px]">
-                                    09:00
+                                    {startTime}
                                 </div>
                             </div>
 
@@ -288,11 +339,13 @@ const DailyRecord = ({selectedMonth, selectedDay, isClicked, recordData, calenda
                 <p>수정할 일정을 선택해주세요</p>
             }
             children={
+                <div className="h-50 overflow-y-scroll">
                 <MedicationSelectionModalContent
                     medicationRecords={medicationRecords}
                     handleModalMedicationClick={handleModalMedicationClick}
                     modalCheckedStatus={modalCheckedStatus}
                 />
+                </div>
             }
             buttons={doubleButton}
         />}
