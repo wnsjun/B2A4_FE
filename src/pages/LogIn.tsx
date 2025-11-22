@@ -4,15 +4,12 @@ import Button from '../components/Button';
 import { isValidPassword } from '../utils/validation';
 import FormInput from '../components/FormInput';
 import { useIsMobile } from '../hooks/useIsMobile';
+import { loginHospitalApi, loginPatientApi } from '../apis/auth';
+import { useAuthStore } from '../hooks/useAuthStore';
 
 type LoginFormInputs = {
   id: string;
   password: string;
-};
-
-const mockData = {
-  id: 'user1',
-  password: 'user0000',
 };
 
 const LogIn = () => {
@@ -27,48 +24,51 @@ const LogIn = () => {
 
   const nav = useNavigate();
   const isMobile = useIsMobile();
+  const { setTokens } = useAuthStore();
 
   const handleSinup = () => {
-    if (isMobile) nav('/signup');
-    else nav('/signuphosp');
+    nav('/signup');
+    // else nav('/signuphosp');
   };
 
   const onSubmit: SubmitHandler<LoginFormInputs> = async (data) => {
-    // e.preventDefault()는 rhfHandleSubmit이 자동으로 해줍니다.
+    try {
+      let response;
+      if (isMobile) {
+        response = await loginPatientApi({
+          loginId: data.id,
+          pwd: data.password,
+        });
+        console.log('로그인 성공');
 
-    console.log('아이디:', data.id); // 'id' 대신 'data.id'
-    console.log('비밀번호:', data.password); // 'password' 대신 'data.password'
+        const { accessToken, refreshToken } = response;
+        setTokens(accessToken, refreshToken);
+        localStorage.setItem('accessToken', accessToken);
+        localStorage.setItem('refreshToken', refreshToken);
 
-    if (data.id === mockData.id && data.password === mockData.password) {
-      const payload = {
-        id: data.id,
-        password: data.password,
-        deviceType: isMobile ? 'mobile' : 'desktop',
-      };
+        nav('/hospitalmap');
+      } else {
+        response = await loginHospitalApi({
+          loginId: data.id,
+          pwd: data.password,
+        });
+        console.log('로그인 성공');
 
-      console.log('전송할 데이터:', payload); // try { ... API 호출 ... }
-    } else {
-      // window.alert('로그인 실패!');
-      // setError('id', {
-      //   type: 'unauthorized',
-      //   message: '아이디 또는 비밀번호가 일치하지 않습니다.',
-      // });
+        const { accessToken, refreshToken } = response;
+        setTokens(accessToken, refreshToken);
+        localStorage.setItem('accessToken', accessToken);
+        localStorage.setItem('refreshToken', refreshToken);
+
+        nav('/select-doctor');
+      }
+    } catch (error: any) {
+      console.error('로그인 실패: ', error);
+
       setError('password', {
         type: 'unauthorized',
+        message: '아이디 또는 비밀번호를 확인해주세요.',
       });
     }
-
-    // try {
-    //   // API 엔드포인트는 하나만 있어도 됩니다.
-    //   await axios.post('https://api.example.com/auth/login', payload);
-    //   alert('로그인 성공!');
-
-    //   // 백엔드 로그 확인: { email: '...', password: '...', deviceType: 'mobile' }
-    //   console.log('전송한 데이터:', payload);
-
-    // } catch (error) {
-    //   alert('로그인 실패');
-    // }
   };
 
   return (

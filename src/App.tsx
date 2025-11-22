@@ -4,6 +4,7 @@ import SplashPageWeb from './pages/Splash.tsx';
 import Intro from './pages/Intro.tsx';
 import LogIn from './pages/LogIn.tsx';
 import SignUp from './pages/SignUp.tsx';
+import SignUpHosp from './pages/SignUpHosp.tsx';
 import Calendar from './pages/Calendar.tsx';
 import AddSchedule from './pages/AddSchedule.tsx';
 import EditSchedule from './pages/EditSchedule.tsx';
@@ -17,9 +18,6 @@ import PreQuestion1 from './pages/PreQuestion1.tsx';
 import PreQuestion2 from './pages/PreQuestion2.tsx';
 import PreQuestion3 from './pages/PreQuestion3.tsx';
 import PatientChat from './pages/PatientChat.tsx';
-import HospitalProfile from './pages/HospitalProfile.tsx';
-import HospitalProfileEdit from './pages/HospitalProfileEdit.tsx';
-import CamQR from './pages/CamQR.tsx';
 
 function App() {
   return (
@@ -29,9 +27,9 @@ function App() {
       <Route path="/pre-question2" element={<PreQuestion2 />} />
       <Route path="/pre-question3" element={<PreQuestion3 />} />
       <Route path="/patientchat" element={<PatientChat />} />
-      <Route path="/hospital-profile" element={<HospitalProfile />} />
-      <Route path="/hospital-profile-edit" element={<HospitalProfileEdit />} />
+      <Route path="/signup" element={<SignUp />} />
 
+      <Route path="/signuphosp" element={<SignUpHosp />} />
       <Route
         path="*"
         element={
@@ -40,7 +38,6 @@ function App() {
               <Route path="/" element={<SplashPageWeb />} />
               <Route path="/logointro" element={<Intro />} />
               <Route path="/login" element={<LogIn />} />
-              <Route path="/signup" element={<SignUp />} />
               <Route path="/medical-records" element={<Calendar />} />
               <Route path="/add-schedule" element={<AddSchedule />} />
               <Route path="/edit-schedule" element={<EditSchedule />} />
@@ -49,7 +46,6 @@ function App() {
               <Route path="/hospitalmap" element={<Hospitalmap />} />
               <Route path="/favorite-hospitals" element={<FavoriteHospitals />} />
               <Route path="/select-doctor" element={<SelectDoctor />} />
-              <Route path="/camqr" element={<CamQR />} />
             </Routes>
           </div>
         }
