@@ -1,11 +1,14 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import Button from '../components/Button';
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Step2Form from '../components/Step2Form';
 import Step1Form from '../components/Step1Form';
 import FileForm from '../components/FileForm';
 import { hospHeader } from '../styles/typography';
 import WebTopbar from '../layouts/WebTopbar';
+import { reverseTransformOperatingData, transformOperatingData } from '../utils/timeConvertor';
+import { getHospitalInfoApi, updateHospitalInfoApi } from '../apis/auth';
 
 interface IOperatingTime {
   mon: string | null;
@@ -29,6 +32,7 @@ interface IFormData {
 const HospitalProfileEdit = () => {
   const [currentStep, setCurrentStep] = useState(1);
   const [selectedDays, setSelectedDays] = useState<(keyof IOperatingTime)[]>([]);
+  const nav = useNavigate();
 
   //폼 데이터를 객체로 관리
   const [formData, setFormData] = useState<IFormData>({
@@ -39,6 +43,42 @@ const HospitalProfileEdit = () => {
     operatingTime: { mon: null, tue: null, wed: null, thu: null, fri: null, sat: null, sun: null },
     mainImage: null,
   });
+
+  useEffect(() => {
+    const fetchHospitalInfo = async () => {
+      const myId = localStorage.getItem('hospitalId');
+
+      if (!myId) {
+        alert('로그인 정보가 없습니다. 다시 로그인해주세요.');
+        nav('/login');
+      } else
+        try {
+          const response = await getHospitalInfoApi(myId);
+          const data = response.data || response;
+
+          const convertedTime = reverseTransformOperatingData(data.operatingTime, data.breakTimes);
+          const activeDays = Object.keys(convertedTime).filter(
+            (key) => convertedTime[key as keyof IOperatingTime] !== null
+          ) as (keyof IOperatingTime)[];
+
+          setSelectedDays(activeDays);
+
+          setFormData({
+            hospitalName: data.name,
+            subject: data.specialties ? data.specialties[0] : '', // 배열이면 첫번째
+            address: data.address,
+            contactNumber: data.contact,
+            operatingTime: convertedTime,
+            mainImage: null, // ⚠️ 기존 이미지는 File 객체가 아니라 URL이라 input에 못 넣음 (null 유지)
+          });
+        } catch (error) {
+          console.error('정보 불러오기 실패:', error);
+          alert('정보를 불러오지 못했습니다.');
+        }
+    };
+
+    fetchHospitalInfo();
+  }, [nav]);
 
   // 유효성 검사
   const isStep1Valid =
@@ -160,11 +200,47 @@ const HospitalProfileEdit = () => {
     }));
   };
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
     if (isStep1Valid && isStep2Valid) {
-      console.log('가입 완료', formData);
+      try {
+        const apiFormData = new FormData();
+
+        // 1. 운영시간 변환 (문자열 -> 객체)
+        const { operatingHours, breakTimes } = transformOperatingData(formData.operatingTime);
+
+        // 2. DTO 객체 생성 (수정할 데이터)
+        const updateDto = {
+          name: formData.hospitalName,
+          address: formData.address,
+          contact: formData.contactNumber, // (필요시 하이픈 제거/추가)
+          specialties: [formData.subject],
+          operatingHours: operatingHours,
+          breakTimes: breakTimes,
+        };
+
+        // 3. JSON Blob 담기 (request)
+        const jsonBlob = new Blob([JSON.stringify(updateDto)], { type: 'application/json' });
+        apiFormData.append('request', jsonBlob);
+
+        // 4. 이미지 (새로 올린 경우만)
+        if (formData.mainImage) {
+          apiFormData.append('image', formData.mainImage);
+        }
+
+        // 5. 수정 API 호출 (updateHospitalInfoApi는 auth.ts나 hospital.ts에 만들어야 함)
+        // (인자는 apiFormData 하나만 보내면 됨. ID는 토큰에 있거나 URL에 포함)
+        const myId = localStorage.getItem('hospitalId');
+
+        if (myId) await updateHospitalInfoApi(myId, apiFormData);
+
+        alert('정보 수정이 완료되었습니다!');
+        // nav('/mypage'); // 이동할 곳
+      } catch (error) {
+        console.error('수정 실패:', error);
+        alert('수정 중 오류가 발생했습니다.');
+      }
     } else {
       if (!isStep1Valid) {
         alert('1단계 입력 정보를 확인해주세요.');
@@ -172,7 +248,6 @@ const HospitalProfileEdit = () => {
       } else if (!isStep2Valid) alert('2단계 입력 정보를 확인해주세요');
     }
   };
-
   return (
     <div>
       <WebTopbar />

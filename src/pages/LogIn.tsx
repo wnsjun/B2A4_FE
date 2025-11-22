@@ -37,42 +37,35 @@ const LogIn = () => {
     try {
       let response;
 
-      // 1. API 호출
       if (isMobile) {
         response = await loginPatientApi({ loginId: data.id, pwd: data.password });
       } else {
         response = await loginHospitalApi({ loginId: data.id, pwd: data.password });
       }
 
-      // 📸 CCTV 1: 서버가 준 전체 응답 확인
-      console.log('1. 서버 응답 전체:', response);
+      const { accessToken, refreshToken, hospitalId, name } = response.data;
 
-      // 2. 토큰 꺼내기 (구조에 따라 다를 수 있음)
-      // 만약 response.data가 없다면 여기서 에러가 날 겁니다.
-      const { accessToken, refreshToken } = response.data;
-
-      // 📸 CCTV 2: 꺼낸 토큰 확인
-      console.log('2. 꺼낸 토큰:', accessToken);
+      if (hospitalId) {
+        localStorage.setItem('hospitalId', String(hospitalId));
+      }
+      if (name) {
+        localStorage.setItem('hospitalName', name);
+      }
 
       if (!accessToken) {
-        alert('큰일 났다! 토큰이 없어요!');
+        alert('토큰이 없습니다');
         return;
       }
 
-      // 3. 저장하기
       localStorage.setItem('accessToken', accessToken);
       if (refreshToken) localStorage.setItem('refreshToken', refreshToken);
-
-      // 📸 CCTV 3: 저장 직후 확인
-      console.log('3. 저장된 토큰 확인:', localStorage.getItem('accessToken'));
-
-      // 4. 스토어 업데이트 및 이동
       setTokens(accessToken, refreshToken || '');
 
       if (isMobile) nav('/setting');
       else nav('/select-doctor');
     } catch (error: any) {
       console.error('로그인 에러 발생:', error);
+      alert('로그인 실패! 아이디나 패스워드를 다시 확인해주세요.');
       setError('password', { type: 'unauthorized', message: '로그인 실패' });
     }
   };
@@ -134,7 +127,6 @@ const LogIn = () => {
               variant="colored"
               children="로그인"
               isMobile={isMobile}
-              onClick={() => nav('/hospitalmap')}
             />
           </div>
         </div>

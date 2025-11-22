@@ -18,6 +18,8 @@ import PreQuestion1 from './pages/PreQuestion1.tsx';
 import PreQuestion2 from './pages/PreQuestion2.tsx';
 import PreQuestion3 from './pages/PreQuestion3.tsx';
 import PatientChat from './pages/PatientChat.tsx';
+import HospitalProfile from './pages/HospitalProfile.tsx';
+import HospitalProfileEdit from './pages/HospitalProfileEdit.tsx';
 
 function App() {
   return (
@@ -30,6 +32,9 @@ function App() {
       <Route path="/signup" element={<SignUp />} />
 
       <Route path="/signuphosp" element={<SignUpHosp />} />
+
+      <Route path="/hospital-profile/:hospitalId" element={<HospitalProfile />} />
+      <Route path="/hospital-profile-edit/:hospitalId" element={<HospitalProfileEdit />} />
       <Route
         path="*"
         element={

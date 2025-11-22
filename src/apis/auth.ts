@@ -16,6 +16,8 @@ interface LoginResponse {
     name?: string;
     loginId?: string;
     imageUrl?: string;
+    patientId?: string;
+    hospitalId?: string;
   };
 }
 
@@ -67,5 +69,17 @@ export const signUpHospitalApi = async (formData: FormData) => {
   const response = await instance.post('/api/hospitals/signup', formData, {
     headers: { 'Content-Type': 'multipart/form-data' },
   });
+  return response.data;
+};
+
+export const getHospitalInfoApi = async (hospitalId: string) => {
+  const response = await instance.get(`/api/hospitals/${hospitalId}`);
+  return response.data;
+};
+
+export const updateHospitalInfoApi = async (hospitalId: string, formData: FormData) => {
+  // 백엔드 주소 규칙에 따라 /api/hospitals/{id} 로 요청
+  // (만약 백엔드가 PUT을 쓴다면 .patch 대신 .put 으로 바꾸세요!)
+  const response = await instance.patch(`/api/hospitals/${hospitalId}`, formData);
   return response.data;
 };

@@ -2,8 +2,9 @@ import Logo from '../components/TypoLogo';
 import logoutImg from '../assets/webTopbar/logout.svg';
 import doctorReselectImg from '../assets/webTopbar/doctor-reselect.svg';
 import { useNavigate } from 'react-router-dom';
-import { logoutHospitalApi } from '../apis/auth';
+import { logoutHospitalApi, getHospitalInfoApi } from '../apis/auth';
 import { useAuthStore } from '../hooks/useAuthStore';
+import { useState, useEffect } from 'react';
 
 interface Props {
   text?: string;
@@ -15,6 +16,15 @@ interface Props {
 const WebTopbar = ({ text, text_img, showDoctorReselect, onDoctorReselectClick }: Props) => {
   const navigate = useNavigate();
   const { clearAuth } = useAuthStore();
+  const [hospitalName, setHospitalName] = useState('');
+
+  // 1. 컴포넌트 마운트 시 저장된 이름 불러오기
+  useEffect(() => {
+    const name = localStorage.getItem('hospitalName');
+    if (name) {
+      setHospitalName(name);
+    }
+  }, []);
 
   const handleDoctorReselectClick = () => {
     if (onDoctorReselectClick) {
@@ -47,6 +57,20 @@ const WebTopbar = ({ text, text_img, showDoctorReselect, onDoctorReselectClick }
     }
   };
 
+  const handleProfileClick = () => {
+    // 저장된 ID 가져오기
+    const hospitalId = localStorage.getItem('hospitalId');
+
+    if (hospitalId) {
+      // ⚠️ [경로 확인!] 병원 상세 페이지 주소로 이동 (예: /hospital/123)
+      navigate(`/hospital-profile/${hospitalId}`);
+    } else {
+      // ID가 없을 경우 로그인 페이지로 튕겨냄
+      alert('병원 정보가 유효하지 않습니다. 다시 로그인해주세요.');
+      //   navigate('/login');
+    }
+  };
+
   return (
     <div className="fixed top-0 w-full py-8 px-32">
       <div className="flex flex-row justify-between w-full">
@@ -57,8 +81,13 @@ const WebTopbar = ({ text, text_img, showDoctorReselect, onDoctorReselectClick }
         <div className="flex flex-row justify-center items-center gap-8 font-semibold text-[14px]">
           {(text || text_img) && (
             <div className="flex flex-row gap-2 items-center">
-              <p className="text-[#343841]">{text}</p>
-              <img src={text_img} alt="" className="w-6 h-6" />
+              <p className="text-[#343841]">{hospitalName}</p>
+              <img
+                src={text_img}
+                alt=""
+                className="w-6 h-6 hover:cursor-pointer"
+                onClick={handleProfileClick}
+              />
             </div>
           )}
 
