@@ -2,7 +2,6 @@ import React, { useRef, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import QrScanner from 'qr-scanner';
 import { useChatStore } from '../hooks/useChatStore';
-import { useAuthStore } from '../hooks/useAuthStore';
 import { wsService } from '../services/websocketService';
 import { scanQRAndCreateChat } from '../apis/chatApi';
 import WaitTreat from '../components/WaitTreat';
@@ -12,7 +11,6 @@ const CamQR: React.FC = () => {
     const videoRef = useRef<HTMLVideoElement>(null);
     const qrScannerRef = useRef<QrScanner | null>(null);
     const { setChatRoom } = useChatStore();
-    const { accessToken } = useAuthStore();
 
     const [scanResult, setScanResult] = useState<string | null>(null);
     const [isScanning, setIsScanning] = useState(false);

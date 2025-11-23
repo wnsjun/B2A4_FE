@@ -16,7 +16,6 @@ type StompMessage = any;
 class WebSocketService {
   private stompClient: StompClient | null = null;
   private subscriptions: Map<string, StompClient> = new Map();
-  private reconnectDelay = 3000;
 
   /**
    * WebSocket (STOMP) 연결 초기화
