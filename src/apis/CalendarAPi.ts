@@ -23,6 +23,27 @@ export interface dailyRecord {
     taken: boolean;
 }
 
+// 특정 달 복약 일정 전체 조회
+export const fetchAllMedication = async(year: string, month: string) => {
+    const accessToken = useAuthStore.getState().accessToken;
+    if (!accessToken) {
+        console.error("accessToken이 없습니다.");
+        throw new Error("Authorization token not found");
+    }
+    try {
+        const res = await axios.get(`${base_URL}/api/patients/medications/month?year=${year}&month=${month}`, {
+            headers: {
+                'Authorization': `Bearer ${accessToken}`,
+            }
+        })
+        console.log(res.data);
+        return res.data;
+    } catch (error) {
+        console.log("특정 달 전체 복약 일정 조회 실패: ", error);
+        throw error;
+    }
+}
+
 // 특정 날짜 복약 일정 조회
 export const fetchDailyRecord = async (date: string) => {
     const accessToken = useAuthStore.getState().accessToken;
@@ -69,6 +90,7 @@ export const fetchDailyTake = async (date: string) => {
     }
 }
 
+// 특정 달 진료 이력 조회
 export const fetchAllTreatment = async (year: string, month: string) => {
     const accessToken = useAuthStore.getState().accessToken;
     if (!accessToken) {

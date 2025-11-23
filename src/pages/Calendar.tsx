@@ -5,8 +5,7 @@ import CalendarCells from "../components/Calendar/CalendarCells";
 import Bottombar from "../layouts/Bottombar";
 import DailyRecord from "../components/Calendar/DailyRecord";
 import { useEffect, useState } from "react";
-//import { mockMedicationData, mockMedicalTreatment } from "../mock/MedicationData";
-import { fetchAllTreatment, fetchDailyRecord, fetchDailyTake, fetchDailyTreatment } from "../apis/CalendarAPi";
+import { fetchAllMedication, fetchAllTreatment, fetchDailyRecord, fetchDailyTake, fetchDailyTreatment } from "../apis/CalendarAPi";
 
 export interface MedicalTreatment {
   year: number;
@@ -45,9 +44,7 @@ const isMedicationActiveOnDate = (dateString: string, record: any): boolean => {
 
 
 const Calendar = () => {
-    const [calendarDate] = useState(new Date());
-    const currentYear = calendarDate.getFullYear();
-    const currentMonth = calendarDate.getMonth();
+    const [calendarDate, _setCalendarDate] = useState(new Date());
 
     const [selectedMonth, setSelectedMonth] = useState("");
     const [selectedDay, setSelectedDay] = useState("");
@@ -60,9 +57,9 @@ const Calendar = () => {
     const [dailyTreatmentData, setDailyTreatmentData] = useState<any>(null);
     const [dailyRecordTaken, setDailyRecordTaken] = useState<any>(null);
     const [statusLoadedForMonth, setStatusLoadedForMonth] = useState('');
+    const [monthlyScheduleMap, setMonthlyScheduleMap] = useState<any[]>([]);
 
     const loadDailyRecord = async (date: string) => {
-        
         try {
            const data = await fetchDailyRecord(date);
             const dailyTaken = await fetchDailyTake(date);
@@ -91,66 +88,107 @@ const Calendar = () => {
         if (selectedDateString) loadDailyRecord(selectedDateString);
     }
 
-    useEffect(() => {
-        const yearstr = currentYear.toString();
-        const monthstr = (currentMonth + 1).toString();
-        const currentMonthYearKey = `${yearstr}-${monthstr.padStart(2, '0')}`;
+    const loadAllMedication = async (year: string, month: string) => {
+        try {
+            const allMedication = await fetchAllMedication(year, month);
+            console.log(allMedication);
 
-        // useEffect 계속해서 렌더링하지 않게
-        if (statusLoadedForMonth === currentMonthYearKey) return;
-        const loadAllTreatment = async (year: string, month: string) => {
-            try {
-                const allTreatment = await fetchAllTreatment(year, month);
-                setCalendarMedTreat(allTreatment.data);
-            } catch (error) {
-                console.log("error", error);
-                setCalendarMedTreat(null);
+            if (allMedication.data) {
+                setMonthlyScheduleMap(allMedication.data);
+            } else {
+                setMonthlyScheduleMap([]);
             }
+        } catch (error) {
+            console.log("error", error);
+            setMonthlyScheduleMap([]);
         }
+    }
 
-        const calculateMonthlyMedStatus = async () => {
-            setStatusLoadedForMonth('LOADING');
-            const monthStart = startOfMonth(calendarDate);
-            const monthEnd = endOfMonth(calendarDate);
-            let day = startOfWeek(monthStart);
-            const today = new Date();
+    // med_all인지 med_noAll인지
+    const calculateMonthlyMedStatus = (currentMonthYearKey: string) => {
+        setStatusLoadedForMonth('LOADING');
+        const monthStart = startOfMonth(calendarDate);
+        const monthEnd = endOfMonth(calendarDate);
+        let day = startOfWeek(monthStart);
+        const today = new Date();
 
-            const newCalendarMedData: Record<string, {hasMed: boolean, isAllTaken: boolean}> = {};
-            while (day <= endOfWeek(monthEnd, {weekStartsOn: 0})) {
-                const dateString = format(day, "yyyy-MM-dd");
+        const newCalendarMedData: Record<string, {hasMed: boolean, isAllTaken: boolean}> = {};
+        
+        const dailyMedicationStatus: Record<string, {totalScheduled: number, totalTaken: number}> = {};
 
-                if (isBefore(day, today) || isSameDay(day, today)) {
-                    try {
-                        const dailyRecordResponse = await fetchDailyRecord(dateString);
-                        const allMedRecords = dailyRecordResponse.data || [];
+        monthlyScheduleMap.forEach(record => {
+            if (Array.isArray(record.days)) {
+                record.days.forEach((dayStatus: {date: string, taken: boolean}) => {
+                    const dateString = dayStatus.date;
 
-                        const filteredRecords = allMedRecords.filter((rec: any) => isMedicationActiveOnDate(dateString, rec));
-                        const hasMed = filteredRecords.length > 0;
-
-                        const dailyTakenResponse = await fetchDailyTake(dateString);
-                        const takenRecords = dailyTakenResponse.data || [];
-
-                        let isAllTaken = false;
-                        if (hasMed) {
-                            const hasUntaken = takenRecords.some((rec: any) => rec.taken !== true);
-                            isAllTaken = !hasUntaken;
-                        }
-                        newCalendarMedData[dateString] = {hasMed, isAllTaken};
-                    } catch (error) {
-                        newCalendarMedData[dateString] = {hasMed: false, isAllTaken: false};
-                        console.error(error);
+                    if (!dailyMedicationStatus[dateString]) {
+                        dailyMedicationStatus[dateString] = {totalScheduled: 0, totalTaken: 0};
                     }
+                    dailyMedicationStatus[dateString].totalScheduled += 1;
+                    if (dayStatus.taken === true) dailyMedicationStatus[dateString].totalTaken += 1;
+
+                });
+            }
+        });
+
+        while (day <= endOfWeek(monthEnd, {weekStartsOn: 0})) {
+            const dateString = format(day, "yyyy-MM-dd");
+            const sum = dailyMedicationStatus[dateString];
+
+            if (isBefore(day, today) || isSameDay(day, today)) {
+                if (sum) {
+                    // 복약 일정 있음
+                    const hasMed = sum.totalScheduled > 0;
+                    let isAllTaken = false;
+                    if (hasMed) isAllTaken = sum.totalScheduled === sum.totalTaken;
+
+                    newCalendarMedData[dateString] = {hasMed, isAllTaken};
                 } else {
                     newCalendarMedData[dateString] = {hasMed: false, isAllTaken: false};
                 }
-                day = addDays(day, 1);
+                
+            } else { // 오늘 이후
+                newCalendarMedData[dateString] = {hasMed: false, isAllTaken: false};
             }
-            setStatusLoadedForMonth(currentMonthYearKey);
-            setCalendarMedData(newCalendarMedData);
-        };
-        loadAllTreatment(yearstr, monthstr);
-        calculateMonthlyMedStatus();
+            day = addDays(day, 1);
+        }
+        setStatusLoadedForMonth(currentMonthYearKey);
+        setCalendarMedData(newCalendarMedData);
+    };
+
+    useEffect(() => {
+        const yearstr = calendarDate.getFullYear().toString();
+        const monthstr = (calendarDate.getMonth() + 1).toString().padStart(2, '0');
+        const currentMonthYearKey = `${yearstr}-${monthstr}`;
+
+        if (statusLoadedForMonth === currentMonthYearKey || statusLoadedForMonth === 'LOADING') return;
+
+        const loadMonthlyData = async () => {
+            try {
+                const allTreatment = await fetchAllTreatment(yearstr, monthstr);
+                setCalendarMedTreat(allTreatment.data);
+            } catch (error) {
+                console.error("월간 진료 조회 오류: ", error);
+                setCalendarMedTreat(null);
+            }
+
+            await loadAllMedication(yearstr, monthstr);
+        }
+
+        loadMonthlyData();
     }, [calendarDate]);
+
+    useEffect(() => {
+        if (monthlyScheduleMap.length === 0 && statusLoadedForMonth !== 'LOADING') return;
+
+        const yearstr = calendarDate.getFullYear().toString();
+        const monthstr = (calendarDate.getMonth() + 1).toString().padStart(2, '0');
+        const currentMonthYearKey = `${yearstr}-${monthstr}`;
+
+        if (statusLoadedForMonth !== currentMonthYearKey) {
+            calculateMonthlyMedStatus(currentMonthYearKey);
+        }
+    }, [monthlyScheduleMap, calendarDate]);
     
     const onDateClick = (day: Date) => {
         const dateString = format(day, "yyyy-MM-dd");
@@ -169,13 +207,6 @@ const Calendar = () => {
         <div className="flex justify-center">
             <Topbar title="진료 기록" />
         </div>
-        {/* {statusLoadedForMonth === 'LOADING' && (
-            <div className="fixed inset-0 flex top-50 justify-center bg-white opacity-50 z-50">
-                <div className="flex felx-col p-4 rounded-lg bg-[#F4F6F8] text-black font-semibold shadow-lg">
-                    <p>복약 아이콘 표시 중</p>
-                </div>
-            </div>
-        )} */}
         {statusLoadedForMonth === 'LOADING' && (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
             <div className="absolute inset-0 bg-white opacity-30" />
