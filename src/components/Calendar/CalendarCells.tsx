@@ -1,6 +1,6 @@
 import { endOfMonth, startOfMonth, startOfWeek, format, addDays, isSameMonth, isSameDay, isBefore } from "date-fns";
 import recordImg from "../../assets/calendar/record.svg";
-// import med_notAll from "../../assets/calendar/med_notall.svg";
+import med_notAll from "../../assets/calendar/med_notall.svg";
 import med_All from "../../assets/calendar/med_all.svg";
 
 export interface MedicalTreatment {
@@ -9,13 +9,18 @@ export interface MedicalTreatment {
   dates: string[];
 }
 
+interface MedicationStatus {
+    hasMed: boolean;
+    isAllTaken: boolean;
+}
+
 interface Props {
     currentDate : Date,
     selectedMonth : string,
     selectedDay : string,
     onDateClick : (day: Date) => void,
     mode: number,
-    calendarMedData?: Record<string, {hasMed: boolean}>
+    calendarMedData?: Record<string, MedicationStatus>,
     calendarMedTreat?: MedicalTreatment | null;
 }
 
@@ -52,12 +57,15 @@ const CalendarCells = ({currentDate, selectedMonth, selectedDay, onDateClick, mo
                 else textColor = "text-[#A9ACB2]"
             }
 
-    
-
             const isOtherMonth = format(currentDate, "M") !== format(cloneDay, "M");
             
             if (mode == 0 && calendarMedData) {
-            const medStatus = calendarMedData[formattedDate] || {hasMed: false};
+            const medStatus = calendarMedData[formattedDate] || {hasMed: false, isAllTaken: false};
+            let medIcon = null;
+            if (medStatus.hasMed) {
+                medIcon = medStatus.isAllTaken ? med_All : med_notAll;
+            }
+
             const hasRecord = calendarMedTreat && 
                                 isSameMonth(cloneDay, currentDate) &&
                                 calendarMedTreat.dates.includes(formattedDate);
@@ -77,7 +85,7 @@ const CalendarCells = ({currentDate, selectedMonth, selectedDay, onDateClick, mo
                         {hasRecord && <img src={recordImg} alt="" />}
                         </div>
                         <div>
-                        {medStatus.hasMed && <img src={med_All} alt="" />}
+                        {medIcon && <img src={medIcon} alt="medicatin status" />}
                         </div>
                     </div>
                 </div>

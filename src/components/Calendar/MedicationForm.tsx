@@ -8,7 +8,7 @@ import defaultImg from "../../assets/calendar/check_default.svg";
 import CalendarModal from "../Calendar/CalendarModal";
 import TimeModal from "../Calendar/TimeModal";
 import { useNavigate } from "react-router-dom";
-import { postMedication } from "../../apis/CalendarAPi";
+import { patchMedication, postMedication } from "../../apis/CalendarAPi";
 
 // 요일(MON, TUE 등) 배열을 체크박스(boolean) 배열로 변환
 const convertDaysToState = (days: string[]): boolean[] => {
@@ -55,6 +55,7 @@ const getMonthDayFromDate = (date: string | null): { month: string, day: string 
 }
 
 export interface scheduleDetail {
+    scheduleId: number;
     period: "morning" | "lunch" | "dinner" | "bedtime" | string;
     time: string;
     enabled: boolean;
@@ -69,10 +70,12 @@ export interface medProps {
     daysOfWeek: string[];
 }
 
+
 interface MedicationFormProps {
     mode: 'add' | 'edit';
     initialData?: medProps | null;
     recordId?: number;
+    date?: string;
 }
 
 const dayLabels = ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"];
@@ -230,7 +233,8 @@ const MedicationForm = ({mode, initialData, recordId} : MedicationFormProps) => 
                 await postMedication(finalData); 
                 console.log("일정 등록이 완료되었습니다. (추가 모드)");
             } else if (mode === 'edit' && recordId) {
-                // await putMedication(recordId, finalData); 
+                const recordIdNum = recordId as number;
+                await patchMedication(recordIdNum, finalData); 
                 console.log(`일정 ${recordId} 수정이 완료되었습니다. (수정 모드)`);
             }
             nav("/medical-records");

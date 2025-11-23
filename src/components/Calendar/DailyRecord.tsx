@@ -5,7 +5,7 @@ import checkImg from "../../assets/calendar/check.svg";
 import defaultImg from "../../assets/calendar/check_default.svg";
 import { useNavigate } from "react-router-dom";
 import Modal from "../Modal";
-import { deleteMedAll, updateMed } from "../../apis/CalendarAPi";
+import { deleteMedAll, deleteMedSingle, updateMed } from "../../apis/CalendarAPi";
 
 
 export interface MedicalTreatment {
@@ -76,9 +76,11 @@ interface Props {
     isClicked : boolean,
     recordData: any[],
     medTreatData?: MedicalTreatment | null;
+    recordTaken: any[],
+    onRefresh: () => void;
 }
 
-const DailyRecord = ({selectedMonth, selectedDay, isClicked, recordData, medTreatData} : Props) => {
+const DailyRecord = ({selectedMonth, selectedDay, isClicked, recordData, medTreatData, recordTaken, onRefresh} : Props) => {
     const nav = useNavigate();
 
     const medicationRecords = recordData || [];
@@ -113,6 +115,7 @@ const DailyRecord = ({selectedMonth, selectedDay, isClicked, recordData, medTrea
     }
     
     const handleDeleteAll = async () => {
+        setSubModal(false);
         const recordId = selectedMedicationId;
         if (recordId === null) {
             alert("삭제할 복약 일정이 선택되지 않았습니다.");
@@ -121,15 +124,26 @@ const DailyRecord = ({selectedMonth, selectedDay, isClicked, recordData, medTrea
             
         try {
             await deleteMedAll(recordId, formattedDate);
-            
+            onRefresh();
         } catch (error) {
             alert("복약 일정 삭제에 실패했습니다.");
         }
-        setSubModal(false);
     }
 
-    const handleDeleteOnly = () => {
+    const handleDeleteOnly = async () => {
         setSubModal(false);
+        const recordId = selectedMedicationId;
+        if (recordId === null) {
+            alert("삭제할 복약 일정이 선택되지 않았습니다.");
+            return;
+        }
+            
+        try {
+            await deleteMedSingle(recordId, formattedDate);
+            onRefresh();
+        } catch (error) {
+            alert("복약 일정 삭제에 실패했습니다.");
+        }
     }
 
     const handleModalMedicationClick = (recordId: number) => () => {
@@ -151,18 +165,26 @@ const DailyRecord = ({selectedMonth, selectedDay, isClicked, recordData, medTrea
         { label: '모든 일정 삭제', onClick: handleDeleteAll, variant: 'default' as const,},
         { label: '이 일정만 삭제', onClick: handleDeleteOnly, variant: 'colored' as const,}
     ]
-    
+    //console.log(recordTaken);
     useEffect(() => {
         const initialStatus: Record<number, boolean> = {};
+        
+        const medTaken = new Map<string, boolean>();
+        if (Array.isArray(recordTaken)) {
+            recordTaken.forEach((item: any) => {
+                medTaken.set(`${item.recordId}_${item.period}`, !!item.taken)
+            })
+        }
         medicationRecords.forEach((med: any) => {
             med.schedules.forEach((schdule: any) => {
-                initialStatus[schdule.scheduleId] = false;
+                const key = `${med.recordId}_${schdule.period}`;
+                initialStatus[schdule.scheduleId] = medTaken.get(key) ?? false;
             });
         });
         setCheckedStatus(initialStatus);
         setModalCheckedStatus({});
 
-    }, [recordData]);
+    }, [recordData, recordTaken]);
 
     console.log(medTreatData);
     
@@ -181,7 +203,6 @@ const DailyRecord = ({selectedMonth, selectedDay, isClicked, recordData, medTrea
         }
         setHasMedicalRecord(recordExists);
     }, [medTreatData]);
-
 
     const onToggle = () => setIsOpen(!isOpen);
     const onOptionClick = (value: string, index: number) => () => {
@@ -256,7 +277,7 @@ const DailyRecord = ({selectedMonth, selectedDay, isClicked, recordData, medTrea
                             <>
                             <div className="flex flex-col my-4 gap-1">
                                 <div>
-                                    {treatmentSummary}
+                                    {treatmentSummary || "진료 요약 없음"}
                                 </div>
                                 <div className="text-[#666B76] text-[12px]">
                                     {startTime}

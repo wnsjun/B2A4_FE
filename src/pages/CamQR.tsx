@@ -70,43 +70,42 @@ const CamQR: React.FC = () => {
     }
 
     return (
-        <div className='relative min-h-screen overflow-hidden'>
-            <div className='w-60 h-60 flex justify-center items-center'>
-                <video 
-                    ref={videoRef}
-                    className="absolute inset-0 w-full h-full object-cover opacity-33"
-                    playsInline
-                    autoPlay
-                    muted
-                />
-                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                    <div className="w-60 h-60 max-w-xs max-h-xs border-4 border-white/80 rounded-lg shadow-2xl relative">
-                        
-                        {(!isScanning && !scanResult && !error) && (
-                            <div className="absolute inset-0 flex items-center justify-center bg-black/30 text-white text-lg font-semibold">
-                                카메라 로드 중...
-                            </div>
-                        )}
-                        
-                        {error && (
-                            <div className="absolute inset-0 flex items-center justify-center bg-red-800/80 text-white p-4 text-sm">
-                                {error}
-                            </div>
-                        )}
-                        
-                        {scanResult && (
-                            <div className="absolute inset-0 flex items-center justify-center bg-black/30 text-white p-4 text-center">
-                                <p className="font-bold">스캔 완료!</p>
-                                <p className="text-sm mt-1 truncate">{scanResult}</p>
-                            </div>
-                            
-                        )}
-                    </div>
-                </div>
-                
-            </div>
-        
+    <div className="relative min-h-screen overflow-hidden">
+    
+        <video
+        ref={videoRef}
+        className="absolute inset-0 w-full h-full object-cover"
+        playsInline autoPlay muted
+        />
+
+        {/* 오버레이 - 바깥만 어둡게 */}
+        <div className="absolute inset-0 pointer-events-none">
+        <div className="absolute top-0 left-0 w-full h-[calc(50%-120px)] bg-black/50" />
+        <div className="absolute bottom-0 left-0 w-full h-[calc(50%-120px)] bg-black/50" />
+        <div className="absolute top-[calc(50%-120px)] left-0 w-[calc(50%-120px)] h-60 bg-black/50" />
+        <div className="absolute top-[calc(50%-120px)] right-0 w-[calc(50%-120px)] h-60 bg-black/50" />
         </div>
+
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+            <div className="relative w-60 h-60">
+                <div className="absolute top-0 left-0 w-8 h-8 border-t-4 border-l-4 border-white"></div>
+                <div className="absolute top-0 right-0 w-8 h-8 border-t-4 border-r-4 border-white"></div>
+                <div className="absolute bottom-0 left-0 w-8 h-8 border-b-4 border-l-4 border-white"></div>
+                <div className="absolute bottom-0 right-0 w-8 h-8 border-b-4 border-r-4 border-white"></div>
+                {(!isScanning && !scanResult && !error) && ( 
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/30 text-white text-lg font-semibold"> 
+                        카메라 로드 중... 
+                    </div> 
+                )} 
+                {error && ( 
+                    <div className="absolute inset-0 flex items-center justify-center bg-red-800/80 text-white p-4 text-sm"> 
+                        {error} 
+                    </div> 
+                )}
+            </div>
+        </div>
+    </div>
+
     )
 };
 
