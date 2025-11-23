@@ -21,6 +21,8 @@ import PatientChat from './pages/PatientChat.tsx';
 import CamQR from './pages/CamQR.tsx';
 import HospitalProfile from './pages/HospitalProfile.tsx';
 import HospitalProfileEdit from './pages/HospitalProfileEdit.tsx';
+import DoctorChat from './pages/DoctorChat.tsx';
+import DoctorWaiting from './pages/DoctorWaiting.tsx';
 
 function App() {
   return (
@@ -30,6 +32,8 @@ function App() {
       <Route path="/pre-question2" element={<PreQuestion2 />} />
       <Route path="/pre-question3" element={<PreQuestion3 />} />
       <Route path="/patientchat" element={<PatientChat />} />
+      <Route path="/doctor/waiting" element={<DoctorWaiting />} />
+      <Route path="/doctor/chat/:chatRoomId" element={<DoctorChat />} />
       <Route path="/signup" element={<SignUp />} />
 
       <Route path="/signuphosp" element={<SignUpHosp />} />

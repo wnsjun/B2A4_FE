@@ -37,3 +37,15 @@ export const postDocPincode = async (doctorId:number, pinCode: string) => {
         throw error;
     }
 }
+
+// QR 코드 조회
+export const fetchDoctorQR = async (doctorId: number) => {
+    try {
+        const res = await instance.get(`/api/doctors/${doctorId}/qr`);
+        console.log("QR 코드 조회 성공 : ", res.data);
+        return res.data;
+    } catch (error) {
+        console.error("QR 코드 조회 실패 : ", error);
+        throw error;
+    }
+}

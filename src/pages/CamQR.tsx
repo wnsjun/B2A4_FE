@@ -1,19 +1,66 @@
 import React, { useRef, useEffect, useState } from 'react';
-import QrScanner from 'qr-scanner'; // QrScanner 라이브러리 임포트
+import { useNavigate } from 'react-router-dom';
+import QrScanner from 'qr-scanner';
+import { useChatStore } from '../hooks/useChatStore';
+import { useAuthStore } from '../hooks/useAuthStore';
+import { scanQRAndCreateChat } from '../apis/chatApi';
 import WaitTreat from '../components/WaitTreat';
 
 const CamQR: React.FC = () => {
+    const navigate = useNavigate();
     const videoRef = useRef<HTMLVideoElement>(null);
     const qrScannerRef = useRef<QrScanner | null>(null);
+    const { setChatRoom } = useChatStore();
+    const { accessToken } = useAuthStore();
 
     const [scanResult, setScanResult] = useState<string | null>(null);
     const [isScanning, setIsScanning] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [isSuccess, setIsSuccess] = useState(false);
+    const [isCreatingChat, setIsCreatingChat] = useState(false);
+
+    // QR 스캔 결과 처리 - 채팅방 생성 및 네비게이션
+    useEffect(() => {
+        if (!scanResult || isCreatingChat) return;
+
+        const createChatRoom = async () => {
+            setIsCreatingChat(true);
+            try {
+                // QR 코드 값에서 의사 ID 추출 (QR 코드 형식에 따라 조정 필요)
+                const doctorId = scanResult.split('?')[1]?.split('=')[1] || scanResult;
+
+                // 채팅방 생성 API 호출
+                const response = await scanQRAndCreateChat(doctorId, scanResult);
+                const chatRoomId = response.chatRoomId || response.id;
+
+                if (chatRoomId && accessToken) {
+                    // 채팅 상태 저장
+                    setChatRoom(chatRoomId, 'patient', accessToken);
+
+                    // 사전질문 페이지로 이동
+                    navigate('/pre-question1');
+                } else {
+                    throw new Error('채팅방 생성 실패');
+                }
+            } catch (err) {
+                console.error('[CamQR] Failed to create chat:', err);
+                setError('채팅방 생성 실패');
+                setIsSuccess(false);
+                setScanResult(null);
+                setIsCreatingChat(false);
+                // 다시 스캔 시작
+                if (qrScannerRef.current) {
+                    qrScannerRef.current.start();
+                }
+            }
+        };
+
+        createChatRoom();
+    }, [scanResult, isCreatingChat, accessToken, navigate, setChatRoom]);
 
     useEffect(() => {
         if (!videoRef.current) return;
-        
+
         const videoElement = videoRef.current;
 
         try {

@@ -45,7 +45,7 @@ const isMedicationActiveOnDate = (dateString: string, record: any): boolean => {
 
 
 const Calendar = () => {
-    const [calendarDate, setCalendarDate] = useState(new Date());
+    const [calendarDate] = useState(new Date());
     const currentYear = calendarDate.getFullYear();
     const currentMonth = calendarDate.getMonth();
 

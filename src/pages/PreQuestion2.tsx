@@ -1,10 +1,12 @@
 import { useNavigate } from 'react-router-dom';
+import { useChatStore } from '../hooks/useChatStore';
 import img21 from '../assets/prequestion/2-1.GIF';
 import img22 from '../assets/prequestion/2-2.GIF';
 import img23 from '../assets/prequestion/2-3.GIF';
 
 const PreQuestion2 = () => {
   const navigate = useNavigate();
+  const { setPreQuestion2 } = useChatStore();
 
   const options = [
     { text: '오늘', gif: img21 },
@@ -12,7 +14,8 @@ const PreQuestion2 = () => {
     { text: '오래 전', gif: img23 },
   ];
 
-  const handleOptionClick = () => {
+  const handleOptionClick = (duration: string) => {
+    setPreQuestion2(duration);
     navigate('/pre-question3');
   };
 
@@ -30,7 +33,7 @@ const PreQuestion2 = () => {
           <div
             key={index}
             className="flex flex-col items-center cursor-pointer"
-            onClick={handleOptionClick}
+            onClick={() => handleOptionClick(option.text)}
           >
             <img
               src={option.gif}

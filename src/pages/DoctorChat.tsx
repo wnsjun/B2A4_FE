@@ -1,21 +1,20 @@
 import { useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { useChatStore } from '../hooks/useChatStore';
 import { useAuthStore } from '../hooks/useAuthStore';
 import { wsService } from '../services/websocketService';
 import { closeChatRoom } from '../apis/chatApi';
 import ChatMessage from '../components/Chat/ChatMessage';
 import ChatInput from '../components/Chat/ChatInput';
-import PreQuestionPanel from '../components/Chat/PreQuestionPanel';
 
-const PatientChat = () => {
+const DoctorChat = () => {
   const navigate = useNavigate();
+  const { chatRoomId: paramChatRoomId } = useParams<{ chatRoomId: string }>();
   const {
     chatRoomId: storeChatRoomId,
     messages,
     isChatClosed,
     userId: storeUserId,
-    clearChatRoom,
     setChatRoom,
   } = useChatStore();
   const { accessToken } = useAuthStore();
@@ -23,17 +22,11 @@ const PatientChat = () => {
   const isInitializedRef = useRef(false);
 
   // localStorage에서 값 읽기
-  const localChatRoomId = localStorage.getItem('chatRoomId');
-  const localUserId = localStorage.getItem('userId');
-  const chatRoomId = storeChatRoomId || localChatRoomId;
-  const userId = storeUserId || localUserId;
+  const localDoctorId = localStorage.getItem('doctorId');
+  const userId = storeUserId || localDoctorId || 'doctor';
 
-  // 로컬스토리지 값을 store에 저장
-  useEffect(() => {
-    if (localChatRoomId && !storeChatRoomId) {
-      setChatRoom(localChatRoomId, 'patient', localUserId || 'patient');
-    }
-  }, [localChatRoomId, storeChatRoomId, localUserId, setChatRoom]);
+  // URL 파라미터로 전달된 chatRoomId 또는 store의 chatRoomId 또는 localStorage 사용
+  const chatRoomId = paramChatRoomId || storeChatRoomId;
 
   // WebSocket 초기화 및 채팅방 구독
   useEffect(() => {
@@ -48,18 +41,25 @@ const PatientChat = () => {
           if (!wsUrl) {
             throw new Error('WebSocket URL not configured');
           }
-          await wsService.connectAsPatient({
-            url: wsUrl,
-            accessToken,
-          });
+          await wsService.connectAsDoctor(
+            {
+              url: wsUrl,
+              accessToken,
+            },
+            userId || ''
+          );
         }
 
         // 채팅방 구독
         if (chatRoomId) {
           wsService.subscribe(`/sub/chats/${chatRoomId}/messages`);
+          // store에 채팅방 정보 설정 (필요시)
+          if (!storeChatRoomId && accessToken) {
+            setChatRoom(chatRoomId, 'doctor', accessToken);
+          }
         }
       } catch (error) {
-        console.error('[PatientChat] Failed to initialize chat:', error);
+        console.error('[DoctorChat] Failed to initialize chat:', error);
         alert('채팅 연결에 실패했습니다.');
         navigate('/');
       }
@@ -70,9 +70,9 @@ const PatientChat = () => {
     }
 
     return () => {
-      // 언마운트 시 구독 해제는 하지 않음 (의사와 함께 사용 중)
+      // 언마운트 시 구독 해제는 하지 않음
     };
-  }, [chatRoomId, accessToken, navigate]);
+  }, [chatRoomId, accessToken, navigate, userId, storeChatRoomId, setChatRoom]);
 
   // 메시지 스크롤 자동 이동
   useEffect(() => {
@@ -87,7 +87,7 @@ const PatientChat = () => {
       await closeChatRoom(chatRoomId);
       // UI 업데이트는 WebSocket 브로드캐스트로 처리됨
     } catch (error) {
-      console.error('[PatientChat] Failed to close chat:', error);
+      console.error('[DoctorChat] Failed to close chat:', error);
       alert('진료 종료에 실패했습니다.');
     }
   };
@@ -95,11 +95,9 @@ const PatientChat = () => {
   // 나가기 버튼 처리
   const handleExit = () => {
     if (isChatClosed) {
-      // 구독 해제 및 세션 종료
       if (chatRoomId) {
         wsService.unsubscribe(`/sub/chats/${chatRoomId}/messages`);
       }
-      clearChatRoom();
       navigate('/');
     } else {
       alert('진료를 먼저 종료해주세요.');
@@ -110,7 +108,7 @@ const PatientChat = () => {
     return (
       <div className="w-full h-screen bg-[#F5F5F5] flex items-center justify-center">
         <div className="text-center">
-          <p className="text-[#666B76]">채팅방이 준비되지 않았습니다.</p>
+          <p className="text-[#666B76]">채팅방 정보가 없습니다.</p>
           <button
             onClick={() => navigate('/')}
             className="mt-4 px-6 py-2 bg-[#5B9EFF] text-white rounded-lg"
@@ -145,7 +143,7 @@ const PatientChat = () => {
         {messages.length === 0 && (
           <div className="flex items-center justify-center h-full">
             <div className="text-center text-[#999]">
-              <p>의사와의 대화를 시작하세요.</p>
+              <p>환자의 메시지를 기다리는 중입니다.</p>
             </div>
           </div>
         )}
@@ -161,11 +159,8 @@ const PatientChat = () => {
         <div ref={messagesEndRef} />
       </div>
 
-      {/* 사전응답 패널 */}
-      {!isChatClosed && <PreQuestionPanel chatRoomId={chatRoomId} />}
-
       {/* 입력 영역 */}
-      <ChatInput chatRoomId={chatRoomId} isEnabled={!isChatClosed} userRole="patient" />
+      <ChatInput chatRoomId={chatRoomId} isEnabled={!isChatClosed} userRole="doctor" />
 
       {/* 진료 종료 버튼 */}
       {!isChatClosed && (
@@ -182,4 +177,4 @@ const PatientChat = () => {
   );
 };
 
-export default PatientChat;
+export default DoctorChat;

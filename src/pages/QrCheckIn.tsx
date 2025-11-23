@@ -1,36 +1,93 @@
 import WebTopbar from '../layouts/WebTopbar';
 import { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { QRCodeSVG } from 'qrcode.react';
+import { fetchDoctorQR } from '../apis/DoctorAPI';
 
 interface DoctorData {
   qr: string;
   doctorName: string;
-  hospitalName: string;
+  hospitalName: string | null;
   specialty: string;
-  generatedAt: string;
+  qrGeneratedAt: string;
   imageUrl?: string;
   profileImage?: string;
 }
 
+interface LocationState {
+  DoctorData: {
+    doctorId: number;
+    name: string;
+    specialty: string;
+    imageURL: string | null;
+    lastTreatment: string | null;
+  };
+}
+
 const QrCheckIn = () => {
+  const location = useLocation();
+  const state = location.state as LocationState;
   const [doctorData, setDoctorData] = useState<DoctorData | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    // 임시데이터
-    const mockData: DoctorData = {
-      qr: "H1-D1-a1b2c3d4",
-      doctorName: "김철수",
-      hospitalName: "농인사랑병원",
-      specialty: "외과·정형외과 전문의",
-      generatedAt: "2025-10-28T10:00:00",
-      profileImage: "https://via.placeholder.com/88", // 실제로는 API에서 받아올 이미지
-      imageUrl: "https://via.placeholder.com/280" // QR코드 이미지
+    const loadQRData = async () => {
+      try {
+        setIsLoading(true);
+        if (!state?.DoctorData?.doctorId) {
+          setError('의사 정보가 없습니다');
+          return;
+        }
+
+        const response = await fetchDoctorQR(state.DoctorData.doctorId);
+
+        if (response.success && response.data) {
+          setDoctorData({
+            qr: response.data.qr,
+            doctorName: response.data.doctorName,
+            hospitalName: response.data.hospitalName,
+            specialty: response.data.specialty,
+            qrGeneratedAt: response.data.qrGeneratedAt,
+          });
+        } else {
+          setError('QR 코드를 불러올 수 없습니다');
+        }
+      } catch (err) {
+        console.error('QR 코드 조회 실패:', err);
+        setError('QR 코드를 불러올 수 없습니다');
+      } finally {
+        setIsLoading(false);
+      }
     };
-    setDoctorData(mockData);
-  }, []);
+
+    loadQRData();
+  }, [state]);
+
+  if (isLoading) {
+    return (
+      <div className="flex flex-col items-center h-screen bg-white">
+        <WebTopbar showDoctorReselect={true} />
+        <div className="flex-1 flex items-center justify-center">
+          <div>로딩 중...</div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex flex-col items-center h-screen bg-white">
+        <WebTopbar showDoctorReselect={true} />
+        <div className="flex-1 flex items-center justify-center">
+          <div className="text-red-500">{error}</div>
+        </div>
+      </div>
+    );
+  }
 
   if (!doctorData) {
-    return <div>로딩 중...</div>;
+    return <div>데이터를 불러올 수 없습니다</div>;
   }
 
   return (
@@ -56,8 +113,12 @@ const QrCheckIn = () => {
               <span>의사</span>
             </div>
             <div className="text-base font-normal text-[#666B76] text-center">
-              <span>{doctorData.hospitalName}</span>
-              <span> · </span>
+              {doctorData.hospitalName && (
+                <>
+                  <span>{doctorData.hospitalName}</span>
+                  <span> · </span>
+                </>
+              )}
               <span>{doctorData.specialty}</span>
             </div>
           </div>

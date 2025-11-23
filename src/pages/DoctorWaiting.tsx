@@ -1,0 +1,176 @@
+import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useChatStore } from '../hooks/useChatStore';
+import { useAuthStore } from '../hooks/useAuthStore';
+import { wsService } from '../services/websocketService';
+
+interface ActiveChatRoom {
+  chatRoomId: string;
+  patientName?: string;
+  status: 'active' | 'closed';
+  createdAt: string;
+}
+
+const DoctorWaiting = () => {
+  const navigate = useNavigate();
+  const { setChatRoom } = useChatStore();
+  const { accessToken } = useAuthStore();
+  const [activeChatRooms, setActiveChatRooms] = useState<ActiveChatRoom[]>([]);
+  const [isConnecting, setIsConnecting] = useState(false);
+  const [isInitialized, setIsInitialized] = useState(false);
+
+  // WebSocket 초기화 및 의사 구독
+  useEffect(() => {
+    const initializeDoctor = async () => {
+      if (isInitialized || !accessToken) return;
+      setIsInitialized(true);
+
+      try {
+        const wsUrl = import.meta.env.VITE_WS_URL;
+        if (!wsUrl) {
+          throw new Error('WebSocket URL not configured');
+        }
+
+        setIsConnecting(true);
+
+        // 의사 ID를 localStorage에서 가져옴
+        const doctorId = localStorage.getItem('doctorId') || 'doctor';
+
+        // WebSocket 연결 + 의사 구독
+        await wsService.connectAsDoctor(
+          {
+            url: wsUrl,
+            accessToken,
+          },
+          doctorId
+        );
+
+        // 새로운 채팅방 알림 수신 (subscribe에서 콜백으로 처리)
+        wsService.subscribe(
+          `/sub/doctors/${doctorId}`,
+          (message: { body: string }) => {
+            const newRoom = JSON.parse(message.body);
+            if (newRoom.id) {
+              const room: ActiveChatRoom = {
+                chatRoomId: newRoom.id,
+                patientName: newRoom.patientName || '환자',
+                status: 'active',
+                createdAt: new Date().toISOString(),
+              };
+              setActiveChatRooms((prev) => [...prev, room]);
+            }
+          }
+        );
+
+        console.log('[DoctorWaiting] Connected as doctor:', doctorId);
+        setIsConnecting(false);
+      } catch (error) {
+        console.error('[DoctorWaiting] Failed to initialize:', error);
+        alert('연결에 실패했습니다.');
+        setIsConnecting(false);
+      }
+    };
+
+    initializeDoctor();
+  }, [accessToken, isInitialized]);
+
+  // 채팅방 입장
+  const handleEnterChatRoom = (chatRoomId: string) => {
+    setChatRoom(chatRoomId, 'doctor', accessToken || '');
+    navigate(`/doctor/chat/${chatRoomId}`);
+  };
+
+  // 의사 로그아웃
+  const handleLogout = () => {
+    // WebSocket 연결 해제
+    wsService.disconnect();
+
+    // 상태 초기화
+    localStorage.removeItem('doctorId');
+
+    // 로그아웃
+    navigate('/login');
+  };
+
+
+  return (
+    <div className="w-full min-h-screen bg-[#F5F5F5]">
+      {/* 헤더 */}
+      <div className="bg-white border-b border-[#E8EAED] px-6 py-4 flex items-center justify-between sticky top-0 z-10">
+        <div>
+          <h1 className="text-[#1A1A1A] font-semibold text-xl">진료 대기</h1>
+          <p className="text-[#999] text-sm">의사 진료실</p>
+        </div>
+        <button
+          onClick={handleLogout}
+          className="px-6 py-2 text-[#666B76] bg-[#F5F5F5] hover:bg-[#E8EAED] rounded-lg transition-colors"
+        >
+          로그아웃
+        </button>
+      </div>
+
+      {/* 콘텐츠 */}
+      <div className="p-6">
+        {isConnecting && (
+          <div className="text-center py-8">
+            <p className="text-[#666B76]">연결 중...</p>
+          </div>
+        )}
+
+        {!isConnecting && activeChatRooms.length === 0 && (
+          <div className="flex items-center justify-center py-20">
+            <div className="text-center">
+              <div className="text-6xl mb-4">🏥</div>
+              <p className="text-[#1A1A1A] font-semibold text-lg mb-2">
+                대기 중인 환자가 없습니다
+              </p>
+              <p className="text-[#666B76]">
+                환자가 QR 코드를 스캔하면 여기에 표시됩니다
+              </p>
+            </div>
+          </div>
+        )}
+
+        {!isConnecting && activeChatRooms.length > 0 && (
+          <div className="grid gap-4">
+            {activeChatRooms.map((room) => (
+              <div
+                key={room.chatRoomId}
+                className="bg-white rounded-lg border border-[#E8EAED] p-4 hover:shadow-md transition-shadow cursor-pointer"
+                onClick={() => handleEnterChatRoom(room.chatRoomId)}
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex-1">
+                    <h3 className="text-[#1A1A1A] font-semibold text-lg">
+                      {room.patientName}
+                    </h3>
+                    <p className="text-[#999] text-sm mt-1">
+                      채팅방 ID: {room.chatRoomId}
+                    </p>
+                    <p className="text-[#999] text-xs mt-1">
+                      {new Date(room.createdAt).toLocaleTimeString('ko-KR')}
+                    </p>
+                  </div>
+                  <div className="ml-4">
+                    {room.status === 'active' && (
+                      <span className="inline-block px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm font-medium">
+                        진료 중
+                      </span>
+                    )}
+                    {room.status === 'closed' && (
+                      <span className="inline-block px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-sm font-medium">
+                        종료됨
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+export default DoctorWaiting;
