@@ -33,7 +33,6 @@ const HospitalProfileEdit = () => {
   const [currentStep, setCurrentStep] = useState(1);
   const [selectedDays, setSelectedDays] = useState<(keyof IOperatingTime)[]>([]);
   const nav = useNavigate();
-  const [isLoading, setIsLoading] = useState(true);
 
   //폼 데이터를 객체로 관리
   const [formData, setFormData] = useState<IFormData>({
@@ -81,9 +80,6 @@ const HospitalProfileEdit = () => {
       } catch (error) {
         console.error('정보 불러오기 실패:', error);
         alert('병원 정보를 불러오지 못했습니다. 콘솔을 확인해주세요.');
-      } finally {
-        // 4. 로딩 끝! (성공/실패와 관계없이 UI를 보여줌)
-        setIsLoading(false);
       }
     };
 
