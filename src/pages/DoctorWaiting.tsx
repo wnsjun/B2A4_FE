@@ -18,6 +18,7 @@ const DoctorWaiting = () => {
   const [activeChatRooms, setActiveChatRooms] = useState<ActiveChatRoom[]>([]);
   const [isConnecting, setIsConnecting] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
+  const [showChatList, setShowChatList] = useState(true);
 
   // WebSocket 초기화 및 의사 구독
   useEffect(() => {
@@ -49,7 +50,9 @@ const DoctorWaiting = () => {
         wsService.subscribe(
           `/sub/doctors/${doctorId}`,
           (message: { body: string }) => {
+            console.log('[DoctorWaiting] 새로운 채팅방 알림 수신:', message.body);
             const newRoom = JSON.parse(message.body);
+            console.log('[DoctorWaiting] 파싱된 newRoom:', newRoom);
             if (newRoom.id) {
               const room: ActiveChatRoom = {
                 chatRoomId: newRoom.id,
@@ -57,6 +60,7 @@ const DoctorWaiting = () => {
                 status: 'active',
                 createdAt: new Date().toISOString(),
               };
+              console.log('[DoctorWaiting] 채팅방 추가:', room);
               setActiveChatRooms((prev) => [...prev, room]);
             }
           }
@@ -80,6 +84,18 @@ const DoctorWaiting = () => {
     navigate(`/doctor/chat/${chatRoomId}`);
   };
 
+  // 의사 재선택
+  const handleSelectDoctor = () => {
+    // WebSocket 연결 해제
+    wsService.disconnect();
+
+    // 상태 초기화
+    localStorage.removeItem('doctorId');
+
+    // 의사 선택 페이지로 이동
+    navigate('/select-doctor');
+  };
+
   // 의사 로그아웃
   const handleLogout = () => {
     // WebSocket 연결 해제
@@ -101,23 +117,39 @@ const DoctorWaiting = () => {
           <h1 className="text-[#1A1A1A] font-semibold text-xl">진료 대기</h1>
           <p className="text-[#999] text-sm">의사 진료실</p>
         </div>
-        <button
-          onClick={handleLogout}
-          className="px-6 py-2 text-[#666B76] bg-[#F5F5F5] hover:bg-[#E8EAED] rounded-lg transition-colors"
-        >
-          로그아웃
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={() => setShowChatList(!showChatList)}
+            className="px-4 py-2 text-sm text-[#666B76] bg-[#F5F5F5] hover:bg-[#E8EAED] rounded-lg transition-colors font-medium"
+          >
+            진료목록
+          </button>
+          <button
+            onClick={handleSelectDoctor}
+            className="px-4 py-2 text-sm text-[#666B76] bg-[#F5F5F5] hover:bg-[#E8EAED] rounded-lg transition-colors font-medium"
+          >
+            의사 재선택
+          </button>
+          <button
+            onClick={handleLogout}
+            className="px-4 py-2 text-sm text-[#666B76] bg-[#F5F5F5] hover:bg-[#E8EAED] rounded-lg transition-colors font-medium"
+          >
+            로그아웃
+          </button>
+        </div>
       </div>
 
       {/* 콘텐츠 */}
       <div className="p-6">
-        {isConnecting && (
-          <div className="text-center py-8">
-            <p className="text-[#666B76]">연결 중...</p>
-          </div>
-        )}
+        {showChatList && (
+          <>
+            {isConnecting && (
+              <div className="text-center py-8">
+                <p className="text-[#666B76]">연결 중...</p>
+              </div>
+            )}
 
-        {!isConnecting && activeChatRooms.length === 0 && (
+            {!isConnecting && activeChatRooms.length === 0 && (
           <div className="flex items-center justify-center py-20">
             <div className="text-center">
               <div className="text-6xl mb-4">🏥</div>
@@ -166,6 +198,19 @@ const DoctorWaiting = () => {
                 </div>
               </div>
             ))}
+          </div>
+            )}
+          </>
+        )}
+
+        {!showChatList && (
+          <div className="flex items-center justify-center py-20">
+            <div className="text-center">
+              <div className="text-6xl mb-4">📋</div>
+              <p className="text-[#1A1A1A] font-semibold text-lg mb-2">
+                진료목록을 보려면 위의 진료목록 버튼을 클릭하세요
+              </p>
+            </div>
           </div>
         )}
       </div>

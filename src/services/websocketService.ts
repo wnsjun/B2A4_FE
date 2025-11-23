@@ -1,5 +1,5 @@
 // @ts-ignore - stompjs doesn't have type definitions
-import * as StompJs from 'stompjs';
+import Stomp from 'stompjs';
 import { useChatStore } from '../hooks/useChatStore';
 import type { ChatMessage } from '../hooks/useChatStore';
 
@@ -24,36 +24,24 @@ class WebSocketService {
   connect(config: WebSocketConfig): Promise<void> {
     return new Promise((resolve, reject) => {
       try {
-        this.stompClient = new StompJs.Client({
-          brokerURL: config.url,
-          connectHeaders: {
-            Authorization: `Bearer ${config.accessToken}`,
+        this.stompClient = Stomp.client(config.url);
+        this.stompClient.debug = () => {}; // 디버그 로그 비활성화
+
+        // stompjs v2.3.3 방식: connect(connectHeaders, connectCallback, errorCallback)
+        this.stompClient.connect(
+          { Authorization: `Bearer ${config.accessToken}` }, // connectHeaders
+          () => {
+            // onConnect callback
+            console.log('[WebSocket] Connected');
+            useChatStore.getState().setConnected(true);
+            resolve();
           },
-          debug: (str: string) => {
-            console.log('[STOMP]', str);
-          },
-          reconnectDelay: this.reconnectDelay,
-          heartbeatIncoming: 4000,
-          heartbeatOutgoing: 4000,
-        });
-
-        this.stompClient.onConnect = () => {
-          console.log('[WebSocket] Connected');
-          useChatStore.getState().setConnected(true);
-          resolve();
-        };
-
-        this.stompClient.onDisconnect = () => {
-          console.log('[WebSocket] Disconnected');
-          useChatStore.getState().setConnected(false);
-        };
-
-        this.stompClient.onStompError = (frame: StompMessage) => {
-          console.error('[WebSocket] STOMP Error:', frame.headers, frame.body);
-          reject(new Error(`STOMP error: ${frame.body}`));
-        };
-
-        this.stompClient.activate();
+          (error: StompMessage) => {
+            // onError callback
+            console.error('[WebSocket] Connection error:', error);
+            reject(error);
+          }
+        );
       } catch (error) {
         console.error('[WebSocket] Connection failed:', error);
         reject(error);
@@ -147,10 +135,11 @@ class WebSocketService {
       message: messageText,
     };
 
-    this.stompClient.publish({
-      destination: `/pub/chats/${chatRoomId}/send`,
-      body: JSON.stringify(payload),
-    });
+    this.stompClient.send(
+      `/pub/chats/${chatRoomId}/send`,
+      {},
+      JSON.stringify(payload)
+    );
 
     console.log(`[WebSocket] Message sent to ${chatRoomId}:`, messageText);
   }
@@ -227,8 +216,12 @@ class WebSocketService {
     this.subscriptions.clear();
 
     // 연결 해제
-    if (this.stompClient) {
-      this.stompClient.deactivate();
+    if (this.stompClient && this.stompClient.connected) {
+      this.stompClient.disconnect(() => {
+        console.log('[WebSocket] Disconnected');
+        this.stompClient = null;
+      });
+    } else {
       this.stompClient = null;
     }
 

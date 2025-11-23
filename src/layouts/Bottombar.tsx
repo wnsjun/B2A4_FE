@@ -30,7 +30,7 @@ export default function Bottombar() {
         navigate('/hospitalmap'); // 지도 경로를 여기에 입력
         break;
       case 'qr':
-        navigate('/qr-code'); // QR 코드 경로를 여기에 입력
+        navigate('/camqr'); // QR 코드 경로를 여기에 입력
         break;
       case 'record':
         navigate('/medical-records'); // 진료 기록 경로를 여기에 입력

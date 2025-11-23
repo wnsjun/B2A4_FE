@@ -56,7 +56,7 @@ function App() {
               <Route path="/hospitalmap" element={<Hospitalmap />} />
               <Route path="/favorite-hospitals" element={<FavoriteHospitals />} />
               <Route path="/select-doctor" element={<SelectDoctor />} />
-              <Route path='camqr' element={<CamQR />} />
+              <Route path='/camqr' element={<CamQR />} />
             </Routes>
           </div>
         }

@@ -61,7 +61,7 @@ const LogIn = () => {
       if (refreshToken) localStorage.setItem('refreshToken', refreshToken);
       setTokens(accessToken, refreshToken || '');
 
-      if (isMobile) nav('/setting');
+      if (isMobile) nav('/hospitalmap');
       else nav('/select-doctor');
     } catch (error: any) {
       console.error('로그인 에러 발생:', error);

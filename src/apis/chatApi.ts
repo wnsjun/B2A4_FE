@@ -23,10 +23,9 @@ export interface CloseChatRoomResponse {
  * QR 스캔으로 채팅방 생성
  * POST /api/chats/rooms/scan-qr
  */
-export const scanQRAndCreateChat = async (doctorId: string, qrCode: string) => {
+export const scanQRAndCreateChat = async (qrCode: string) => {
   try {
-    const response = await axiosInstance.post('/chats/rooms/scan-qr', {
-      doctorId,
+    const response = await axiosInstance.post('/api/chats/rooms/scan-qr', {
       qrCode,
     });
     return response.data;
