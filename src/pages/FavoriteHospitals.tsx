@@ -3,6 +3,7 @@ import Topbar from "../layouts/Topbar";
 import Bottombar from "../layouts/Bottombar";
 import HospitalFavoriteContent from "../components/HospitalMap/HospitalFavoriteContent";
 import HospitalIamge from '../assets/hospitalmap/hospitalimage.png';
+import { getBookmarkedHospitalsApi, deleteBookmarkApi } from "../apis/bookmark";
 
 interface Hospital {
   id: number;
@@ -18,84 +19,88 @@ interface Hospital {
     endTime: string;
   };
   phone: string;
+  isFavorite?: boolean;
+  operatingHours?: Array<{
+    dayOfWeek: string;
+    openTime?: string;
+    closeTime?: string;
+    breakStartTime?: string;
+    breakEndTime?: string;
+    isClosed: boolean;
+  }>;
 }
 
-const HOSPITAL_DATA: Hospital[] = [
-  {
-    id: 1,
-    lat: 37.5560379420754,
-    lng: 126.924462416982,
-    image: HospitalIamge,
-    name: "농인사랑병원",
-    department: "외과·정형외과",
-    address: "서울특별시 마포구 양화로 188 (동교동)",
-    hours: { day: "월", startTime: "09:00", endTime: "18:00" },
-    phone: "02-789-9800",
-  },
-  {
-    id: 2,
-    lat: 37.5553020767532,
-    lng: 126.923590029183,
-    image: HospitalIamge,
-    name: "마포의료센터",
-    department: "내과·외과",
-    address: "서울특별시 마포구 양화로 200",
-    hours: { day: "월", startTime: "08:00", endTime: "19:00" },
-    phone: "02-789-9801",
-  },
-  {
-    id: 3,
-    lat: 37.5545808852364,
-    lng: 126.922708589618,
-    image: HospitalIamge,
-    name: "동교병원",
-    department: "정형외과",
-    address: "서울특별시 마포구 양화로 180",
-    hours: { day: "월", startTime: "09:30", endTime: "18:30" },
-    phone: "02-789-9802",
-  },
-];
-
 const FavoriteHospitals = () => {
-  const [favorites, setFavorites] = useState<Set<number>>(new Set([1, 2]));
+  const [hospitals, setHospitals] = useState<Hospital[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  // localStorage에서 즐겨찾기 불러오기
+  // 즐겨찾기 병원 목록 조회 API 호출
   useEffect(() => {
-    const savedFavorites = localStorage.getItem('hospitalFavorites');
-    if (savedFavorites) {
+    const fetchBookmarkedHospitals = async () => {
       try {
-        setFavorites(new Set(JSON.parse(savedFavorites)));
-      } catch (e) {
-        console.error('Failed to load favorites:', e);
+        const response = await getBookmarkedHospitalsApi();
+        console.log('즐겨찾기 병원 목록:', response.data);
+
+        // API 응답을 Hospital 타입으로 변환
+        const convertedHospitals: Hospital[] = response.data.hospitals.map((hospital) => ({
+          id: hospital.id,
+          lat: 0, // 목록 조회 API에는 위도 정보 없음
+          lng: 0, // 목록 조회 API에는 경도 정보 없음
+          image: hospital.imageUrl || HospitalIamge,
+          name: hospital.name,
+          department: hospital.specialties.join('·'),
+          address: hospital.address,
+          hours: {
+            day: hospital.operatingHours?.[0]?.dayOfWeek || '',
+            startTime: hospital.operatingHours?.[0]?.openTime || '',
+            endTime: hospital.operatingHours?.[0]?.closeTime || '',
+          },
+          phone: hospital.contact,
+          isFavorite: hospital.bookmark,
+          operatingHours: hospital.operatingHours,
+        }));
+
+        setHospitals(convertedHospitals);
+      } catch (error) {
+        console.error('즐겨찾기 병원 목록 조회 실패:', error);
+      } finally {
+        setIsLoading(false);
       }
-    }
+    };
+
+    fetchBookmarkedHospitals();
   }, []);
 
-  // 즐겨찾기 변경 시 localStorage에 저장
-  useEffect(() => {
-    localStorage.setItem('hospitalFavorites', JSON.stringify(Array.from(favorites)));
-  }, [favorites]);
+  const handleRemoveFavorite = async (id: number) => {
+    try {
+      // DELETE API 호출
+      const response = await deleteBookmarkApi(id);
+      console.log('즐겨찾기 제거 성공:', response.message);
 
-  const handleRemoveFavorite = (id: number) => {
-    const newFavorites = new Set(favorites);
-    newFavorites.delete(id);
-    setFavorites(newFavorites);
+      // 로컬 상태에서 제거
+      const updatedHospitals = hospitals.filter(hospital => hospital.id !== id);
+      setHospitals(updatedHospitals);
+    } catch (error) {
+      console.error('즐겨찾기 제거 실패:', error);
+    }
   };
-
-  const favoriteHospitals = HOSPITAL_DATA.filter(hospital => favorites.has(hospital.id));
 
   return (
     <div className="flex flex-col items-center">
       <Topbar type="header" title="즐겨찾기" />
 
       <div className="w-[360px] overflow-y-auto py-4">
-        {favoriteHospitals.length === 0 ? (
+        {isLoading ? (
+          <div className="flex justify-center items-center h-full text-gray-600 text-sm">
+            로딩 중...
+          </div>
+        ) : hospitals.length === 0 ? (
           <div className="flex justify-center items-center h-full text-gray-600 text-sm">
             즐겨찾기 병원이 없습니다.
           </div>
         ) : (
           <div className="flex flex-col gap-0 w-full">
-            {favoriteHospitals.map((hospital) => (
+            {hospitals.map((hospital) => (
               <div key={hospital.id}>
                 <HospitalFavoriteContent
                   image={hospital.image}
@@ -104,8 +109,9 @@ const FavoriteHospitals = () => {
                   address={hospital.address}
                   hours={hospital.hours}
                   phone={hospital.phone}
-                  isFavorite={true}
+                  isFavorite={hospital.isFavorite || false}
                   onFavoriteToggle={() => handleRemoveFavorite(hospital.id)}
+                  operatingHours={hospital.operatingHours}
                 />
               </div>
             ))}

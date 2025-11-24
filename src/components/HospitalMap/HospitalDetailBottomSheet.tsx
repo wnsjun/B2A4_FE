@@ -17,6 +17,14 @@ interface HospitalDetailBottomSheetProps {
     };
     phone: string;
     isFavorite?: boolean;
+    operatingHours?: Array<{
+      dayOfWeek: string;
+      openTime?: string;
+      closeTime?: string;
+      breakStartTime?: string;
+      breakEndTime?: string;
+      isClosed: boolean;
+    }>;
   };
   onFavoriteToggle?: () => void;
 }
@@ -113,6 +121,7 @@ const HospitalDetailBottomSheet: React.FC<HospitalDetailBottomSheetProps> = ({
             phone={hospital.phone}
             isFavorite={hospital.isFavorite}
             onFavoriteToggle={onFavoriteToggle}
+            operatingHours={hospital.operatingHours}
           />
         </div>
         </div>
