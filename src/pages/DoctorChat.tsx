@@ -126,18 +126,6 @@ const DoctorChat = () => {
     }
   };
 
-  // 나가기 버튼 처리
-  const handleExit = () => {
-    if (isChatClosed) {
-      if (chatRoomId) {
-        wsService.unsubscribe(`/sub/chats/${chatRoomId}/messages`);
-      }
-      navigate('/');
-    } else {
-      alert('진료를 먼저 종료해주세요.');
-    }
-  };
-
   // 음성 녹음 시작
   const startRecording = async () => {
     try {

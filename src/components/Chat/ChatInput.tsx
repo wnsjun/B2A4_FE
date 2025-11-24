@@ -1,7 +1,5 @@
-import React, { useState, useRef } from 'react';
+import React, { useState } from 'react';
 import { wsService } from '../../services/websocketService';
-import { sendVoiceMessage } from '../../apis/chatApi';
-import { useChatStore } from '../../hooks/useChatStore';
 
 interface ChatInputProps {
   chatRoomId: string;
@@ -11,11 +9,6 @@ interface ChatInputProps {
 
 const ChatInput: React.FC<ChatInputProps> = ({ chatRoomId, isEnabled, userRole = 'patient' }) => {
   const [message, setMessage] = useState('');
-  const [isRecording, setIsRecording] = useState(false);
-  const [isSending, setIsSending] = useState(false);
-  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
-  const audioChunksRef = useRef<Blob[]>([]);
-  const { addMessage } = useChatStore();
 
   const handleSendMessage = () => {
     if (message.trim() && chatRoomId) {
@@ -28,62 +21,6 @@ const ChatInput: React.FC<ChatInputProps> = ({ chatRoomId, isEnabled, userRole =
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       handleSendMessage();
-    }
-  };
-
-  const startRecording = async () => {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const mediaRecorder = new MediaRecorder(stream);
-
-      audioChunksRef.current = [];
-
-      mediaRecorder.ondataavailable = (event) => {
-        audioChunksRef.current.push(event.data);
-      };
-
-      mediaRecorder.onstop = async () => {
-        const audioBlob = new Blob(audioChunksRef.current, {
-          type: 'audio/webm',
-        });
-
-        // 의사만 음성 메시지 전송 가능
-        if (userRole === 'doctor') {
-          setIsSending(true);
-          try {
-            const audioFile = new File([audioBlob], `voice-${Date.now()}.webm`, {
-              type: 'audio/webm',
-            });
-            const response = await sendVoiceMessage(chatRoomId, audioFile);
-            console.log('[ChatInput] Voice message sent successfully:', response);
-          } catch (error) {
-            console.error('[ChatInput] Failed to send voice message:', error);
-            alert('음성 메시지 전송에 실패했습니다.');
-          } finally {
-            setIsSending(false);
-          }
-        } else {
-          console.log('[ChatInput] Only doctors can send voice messages');
-          alert('의사만 음성 메시지를 전송할 수 있습니다.');
-        }
-      };
-
-      mediaRecorder.start();
-      mediaRecorderRef.current = mediaRecorder;
-      setIsRecording(true);
-    } catch (error) {
-      console.error('[ChatInput] Failed to start recording:', error);
-      alert('마이크 권한을 허용해주세요.');
-    }
-  };
-
-  const stopRecording = () => {
-    if (mediaRecorderRef.current) {
-      mediaRecorderRef.current.stop();
-      mediaRecorderRef.current.stream.getTracks().forEach((track) => {
-        track.stop();
-      });
-      setIsRecording(false);
     }
   };
 
@@ -116,7 +53,7 @@ const ChatInput: React.FC<ChatInputProps> = ({ chatRoomId, isEnabled, userRole =
         onChange={(e) => setMessage(e.target.value)}
         onKeyPress={handleKeyPress}
         placeholder="대화를 입력하세요"
-        disabled={!isEnabled || isSending}
+        disabled={!isEnabled}
         className={`${inputWidth} bg-transparent border-b-2 border-[#A9ACB2] px-0 py-0 ${inputHeight} placeholder-[#A9ACB2] focus:outline-none focus:border-[#0C58FF] disabled:placeholder-[#7A8090] disabled:text-[#7A8090] ${fontSize}`}
         style={{
           color: '#FFFFFF',
@@ -130,7 +67,7 @@ const ChatInput: React.FC<ChatInputProps> = ({ chatRoomId, isEnabled, userRole =
       {/* 대화입력 버튼 */}
       <button
         onClick={handleSendMessage}
-        disabled={!message.trim() || !isEnabled || isSending}
+        disabled={!message.trim() || !isEnabled}
         style={{
           background: 'linear-gradient(207deg, #0C58FF 13.18%, #3FB6FF 91.66%)',
         }}
