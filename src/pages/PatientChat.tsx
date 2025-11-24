@@ -3,10 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { useChatStore } from '../hooks/useChatStore';
 import { useAuthStore } from '../hooks/useAuthStore';
 import { wsService } from '../services/websocketService';
-import { closeChatRoom } from '../apis/chatApi';
 import ChatMessage from '../components/Chat/ChatMessage';
 import ChatInput from '../components/Chat/ChatInput';
-import PreQuestionPanel from '../components/Chat/PreQuestionPanel';
 
 const PatientChat = () => {
   const navigate = useNavigate();
@@ -17,16 +15,20 @@ const PatientChat = () => {
     userId: storeUserId,
     clearChatRoom,
     setChatRoom,
+    preQuestionAnswers,
+    clearPreQuestionAnswers,
   } = useChatStore();
   const { accessToken } = useAuthStore();
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const isInitializedRef = useRef(false);
+  const isMessageSentRef = useRef(false);
 
   // localStorage에서 값 읽기
   const localChatRoomId = localStorage.getItem('chatRoomId');
   const localUserId = localStorage.getItem('userId');
   const chatRoomId = storeChatRoomId || localChatRoomId;
   const userId = storeUserId || localUserId;
+  const doctorName = localStorage.getItem('doctorName') || '의사';
 
   // 로컬스토리지 값을 store에 저장
   useEffect(() => {
@@ -79,18 +81,76 @@ const PatientChat = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  // 진료 종료 처리
-  const handleEndConsultation = async () => {
-    if (!chatRoomId) return;
+  // 진료 종료 후 3초 뒤 완료 페이지로 이동
+  useEffect(() => {
+    if (isChatClosed) {
+      const timer = setTimeout(() => {
+        navigate('/patient-consultation-completed');
+      }, 3000);
 
-    try {
-      await closeChatRoom(chatRoomId);
-      // UI 업데이트는 WebSocket 브로드캐스트로 처리됨
-    } catch (error) {
-      console.error('[PatientChat] Failed to close chat:', error);
-      alert('진료 종료에 실패했습니다.');
+      return () => clearTimeout(timer);
     }
-  };
+  }, [isChatClosed, navigate]);
+
+  // 사전질문 답변을 기반으로 자동 메시지 전송 (WebSocket 연결 후)
+  useEffect(() => {
+    if (
+      isMessageSentRef.current ||
+      !chatRoomId ||
+      !preQuestionAnswers.symptom ||
+      !preQuestionAnswers.duration
+    ) {
+      return;
+    }
+
+    console.log('[PatientChat] Auto message check:', {
+      isMessageSent: isMessageSentRef.current,
+      chatRoomId,
+      symptom: preQuestionAnswers.symptom,
+      duration: preQuestionAnswers.duration,
+      isConnected: wsService.isConnected(),
+    });
+
+    // WebSocket 연결을 폴링으로 대기
+    const checkAndSendMessage = () => {
+      if (wsService.isConnected()) {
+        console.log('[PatientChat] WebSocket connected! Sending auto message...');
+
+        isMessageSentRef.current = true;
+
+        // 메시지 생성: "사전질문 : 오늘부터 아파요" 또는 "사전질문 : 오늘부터 기타 증상이 있어요" 형식
+        let message = '';
+        if (preQuestionAnswers.symptom === '기타') {
+          message = `사전질문 : ${preQuestionAnswers.duration}부터 기타 증상이 있어요`;
+        } else {
+          message = `사전질문 : ${preQuestionAnswers.duration}부터 ${preQuestionAnswers.symptom}`;
+        }
+
+        console.log('[PatientChat] Preparing to send auto message:', message);
+
+        // 약간의 딜레이 후 메시지 전송
+        const timer = setTimeout(() => {
+          try {
+            wsService.sendChatMessage(chatRoomId, message);
+            console.log('[PatientChat] Auto message sent successfully:', message);
+            // 전송 후 사전질문 답변 초기화
+            clearPreQuestionAnswers();
+          } catch (error) {
+            console.error('[PatientChat] Failed to send auto message:', error);
+          }
+        }, 300);
+
+        return () => clearTimeout(timer);
+      } else {
+        console.log('[PatientChat] Waiting for WebSocket connection...');
+        // 500ms 후 다시 확인
+        const pollTimer = setTimeout(checkAndSendMessage, 500);
+        return () => clearTimeout(pollTimer);
+      }
+    };
+
+    return checkAndSendMessage();
+  }, [chatRoomId, preQuestionAnswers, clearPreQuestionAnswers]);
 
   // 나가기 버튼 처리
   const handleExit = () => {
@@ -108,12 +168,12 @@ const PatientChat = () => {
 
   if (!chatRoomId) {
     return (
-      <div className="w-full h-screen bg-[#F5F5F5] flex items-center justify-center">
+      <div className="w-full h-screen bg-[#3A3F47] flex items-center justify-center">
         <div className="text-center">
-          <p className="text-[#666B76]">채팅방이 준비되지 않았습니다.</p>
+          <p className="text-[#B0B5BC]">채팅방 정보가 없습니다.</p>
           <button
             onClick={() => navigate('/')}
-            className="mt-4 px-6 py-2 bg-[#5B9EFF] text-white rounded-lg"
+            className="mt-4 px-6 py-2 bg-[#5B9EFF] text-white rounded-lg hover:bg-[#4A8AE8]"
           >
             돌아가기
           </button>
@@ -123,28 +183,39 @@ const PatientChat = () => {
   }
 
   return (
-    <div className="w-full h-screen flex flex-col bg-white">
+    <div className="w-full h-screen flex flex-col bg-[#3A3F47]">
       {/* 헤더 */}
-      <div className="bg-white border-b border-[#E8EAED] px-4 py-4 flex items-center justify-between">
-        <div>
-          <h1 className="text-[#1A1A1A] font-semibold text-lg">
-            {isChatClosed ? '진료 종료됨' : '진료 중'}
+      <div className="bg-[#3A3F47] px-4 py-3 flex items-center justify-between flex-shrink-0">
+        <div className="flex items-baseline gap-2">
+          <h1
+            style={{
+              color: '#FFF',
+              fontFamily: 'Inter',
+              fontSize: '20px',
+              fontWeight: '600',
+              lineHeight: '150%',
+              letterSpacing: '-0.4px',
+            }}
+          >
+            {doctorName}
           </h1>
-          <p className="text-[#999] text-sm">채팅방 ID: {chatRoomId}</p>
+          <p className="text-[#B0B5BC] text-xs">
+            {isChatClosed ? '진료 종료됨' : '진료 중'}
+          </p>
         </div>
         <button
           onClick={handleExit}
-          className="px-4 py-2 text-[#666B76] hover:bg-[#F5F5F5] rounded-lg transition-colors"
+          className="text-[#B0B5BC] hover:text-white transition-colors text-lg font-medium flex-shrink-0"
         >
           ✕
         </button>
       </div>
 
       {/* 메시지 영역 */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+      <div className="flex-1 overflow-y-auto px-4 py-3 space-y-3">
         {messages.length === 0 && (
           <div className="flex items-center justify-center h-full">
-            <div className="text-center text-[#999]">
+            <div className="text-center text-[#7A8090]">
               <p>의사와의 대화를 시작하세요.</p>
             </div>
           </div>
@@ -161,23 +232,10 @@ const PatientChat = () => {
         <div ref={messagesEndRef} />
       </div>
 
-      {/* 사전응답 패널 */}
-      {!isChatClosed && <PreQuestionPanel chatRoomId={chatRoomId} />}
-
       {/* 입력 영역 */}
-      <ChatInput chatRoomId={chatRoomId} isEnabled={!isChatClosed} userRole="patient" />
-
-      {/* 진료 종료 버튼 */}
-      {!isChatClosed && (
-        <div className="bg-[#F5F5F5] border-t border-[#E8EAED] p-4">
-          <button
-            onClick={handleEndConsultation}
-            className="w-full px-6 py-3 bg-red-500 text-white rounded-lg font-medium hover:bg-red-600 transition-colors"
-          >
-            진료 종료
-          </button>
-        </div>
-      )}
+      <div className="flex-shrink-0 px-4 py-3 bg-[#3A3F47]">
+        <ChatInput chatRoomId={chatRoomId} isEnabled={!isChatClosed} userRole="patient" />
+      </div>
     </div>
   );
 };

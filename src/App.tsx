@@ -1,5 +1,9 @@
 import './App.css';
-import { Route, Routes } from 'react-router-dom';
+import { Route, Routes, useNavigate } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { useAuthStore } from './hooks/useAuthStore';
+import { useChatStore } from './hooks/useChatStore';
+import { wsService } from './services/websocketService';
 import SplashPageWeb from './pages/Splash.tsx';
 import Intro from './pages/Intro.tsx';
 import LogIn from './pages/LogIn.tsx';
@@ -23,21 +27,95 @@ import HospitalProfile from './pages/HospitalProfile.tsx';
 import HospitalProfileEdit from './pages/HospitalProfileEdit.tsx';
 import DoctorChat from './pages/DoctorChat.tsx';
 import DoctorWaiting from './pages/DoctorWaiting.tsx';
+import ConsultationCompleted from './pages/ConsultationCompleted.tsx';
+import PatientConsultationCompleted from './pages/PatientConsultationCompleted.tsx';
 
 function App() {
+  const navigate = useNavigate();
+  const { accessToken, doctorId } = useAuthStore();
+  const { setChatRoom, setChatRoomInfo } = useChatStore();
+  const [, setNotificationCount] = useState(0);
+
+  // 의사 전역 WebSocket 초기화
+  useEffect(() => {
+    const initializeDoctorWebSocket = async () => {
+      if (!doctorId || !accessToken) return;
+
+      try {
+        // 이미 연결되어 있으면 스킵
+        if (wsService.isConnected()) {
+          return;
+        }
+
+        const wsUrl = import.meta.env.VITE_WS_URL;
+        if (!wsUrl) {
+          throw new Error('WebSocket URL not configured');
+        }
+
+        // WebSocket 연결
+        await wsService.connectAsDoctor(
+          {
+            url: wsUrl,
+            accessToken,
+          },
+          doctorId
+        );
+
+        // 새로운 채팅방 알림 수신
+        wsService.subscribe(
+          `/sub/doctors/${doctorId}`,
+          (message: { body: string }) => {
+            console.log('[App] 새로운 채팅방 알림:', message.body);
+            try {
+              const newRoom = JSON.parse(message.body);
+              const chatRoomId = newRoom.chatRoomId || newRoom.id;
+              if (chatRoomId) {
+                // 알림 카운트 증가
+                setNotificationCount((prev) => prev + 1);
+
+                // 채팅 상태 저장
+                setChatRoom(chatRoomId.toString(), 'doctor', String(doctorId));
+
+                // 환자 정보 저장
+                if (newRoom.patientName || newRoom.startedAt) {
+                  setChatRoomInfo(newRoom.patientName, newRoom.doctorName, newRoom.startedAt);
+                }
+
+                // 자동으로 채팅 페이지로 이동
+                console.log('[App] 채팅 페이지로 이동:', `/doctor/chat/${chatRoomId}`);
+                navigate(`/doctor/chat/${chatRoomId}`);
+
+                // 브라우저 알림
+                if ('Notification' in window && Notification.permission === 'granted') {
+                  new Notification('새로운 환자', {
+                    body: `${newRoom.patientName || '환자'}가 진료를 요청했습니다.`,
+                    tag: `chat-${chatRoomId}`,
+                  });
+                }
+              }
+            } catch (error) {
+              console.error('[App] 알림 파싱 실패:', error);
+            }
+          }
+        );
+
+        console.log('[App] 의사 WebSocket 초기화 완료');
+      } catch (error) {
+        console.error('[App] 의사 WebSocket 초기화 실패:', error);
+      }
+    };
+
+    initializeDoctorWebSocket();
+  }, [doctorId, accessToken, navigate, setChatRoom, setChatRoomInfo]);
+
   return (
     <Routes>
       <Route path="/qr-checkin" element={<QrCheckIn />} />
-      <Route path="/pre-question1" element={<PreQuestion1 />} />
-      <Route path="/pre-question2" element={<PreQuestion2 />} />
-      <Route path="/pre-question3" element={<PreQuestion3 />} />
-      <Route path="/patientchat" element={<PatientChat />} />
       <Route path="/doctor/waiting" element={<DoctorWaiting />} />
       <Route path="/doctor/chat/:chatRoomId" element={<DoctorChat />} />
+      <Route path="/doctor/consultation-completed" element={<ConsultationCompleted />} />
       <Route path="/signup" element={<SignUp />} />
-
       <Route path="/signuphosp" element={<SignUpHosp />} />
-
       <Route path="/hospital-profile/:hospitalId" element={<HospitalProfile />} />
       <Route path="/hospital-profile-edit/:hospitalId" element={<HospitalProfileEdit />} />
       <Route
@@ -57,6 +135,11 @@ function App() {
               <Route path="/favorite-hospitals" element={<FavoriteHospitals />} />
               <Route path="/select-doctor" element={<SelectDoctor />} />
               <Route path='/camqr' element={<CamQR />} />
+              <Route path="/pre-question1" element={<PreQuestion1 />} />
+              <Route path="/pre-question2" element={<PreQuestion2 />} />
+              <Route path="/pre-question3" element={<PreQuestion3 />} />
+              <Route path="/patientchat" element={<PatientChat />} />
+              <Route path="/patient-consultation-completed" element={<PatientConsultationCompleted />} />
             </Routes>
           </div>
         }

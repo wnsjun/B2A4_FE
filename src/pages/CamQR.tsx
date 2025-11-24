@@ -2,7 +2,6 @@ import React, { useRef, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import QrScanner from 'qr-scanner';
 import { useChatStore } from '../hooks/useChatStore';
-import { wsService } from '../services/websocketService';
 import { scanQRAndCreateChat } from '../apis/chatApi';
 import WaitTreat from '../components/WaitTreat';
 
@@ -33,24 +32,15 @@ const CamQR: React.FC = () => {
                 console.log('[CamQR] chatRoomId:', chatRoomId, 'accessToken:', token);
 
                 if (chatRoomId && token) {
-                    // WebSocket 연결
-                    const wsUrl = import.meta.env.VITE_WS_URL;
-                    if (!wsUrl) {
-                        throw new Error('WebSocket URL not configured');
-                    }
-                    console.log('[CamQR] WebSocket 연결 시도');
-                    await wsService.connectAsPatient({
-                        url: wsUrl,
-                        accessToken: token,
-                    });
-                    console.log('[CamQR] WebSocket 연결 성공');
+                    // localStorage에 저장
+                    localStorage.setItem('chatRoomId', chatRoomId.toString());
+                    localStorage.setItem('userId', '1'); // 환자 ID는 실제 사용자 정보에서 가져오기
+                    localStorage.setItem('accessToken', token);
 
-                    // 채팅방 구독
-                    wsService.subscribe(`/sub/chats/${chatRoomId}/messages`);
-                    console.log('[CamQR] 채팅방 구독 완료');
+                    // 채팅 상태 저장 (WebSocket 구독은 PatientChat에서 처리)
+                    setChatRoom(chatRoomId.toString(), 'patient', '1');
 
-                    // 채팅 상태 저장
-                    setChatRoom(chatRoomId, 'patient', token);
+                    console.log('[CamQR] 채팅방 생성 완료:', chatRoomId);
 
                     // 사전질문 페이지로 이동
                     navigate('/pre-question1');

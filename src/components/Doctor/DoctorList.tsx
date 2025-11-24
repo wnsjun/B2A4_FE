@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Modal from "../Modal";
 import { fetchDoctorList, postDocPincode } from "../../apis/DoctorAPI";
+import { useAuthStore } from "../../hooks/useAuthStore";
 
 export interface Doctor {
     doctorId: number;
@@ -19,9 +20,10 @@ interface DoctorListProps {
 
 const DoctorList: React.FC<DoctorListProps> = ({onAddDoctor}) => {
     const nav = useNavigate();
+    const { setDoctorId } = useAuthStore();
     const [doctorListData, setDoctorListData] = useState<Doctor[]>([]);
     const [selectedDoctor, setSelectedDoctor] = useState<Doctor | null>(null);
-    
+
     const [name, setName] = useState("");
     const [isButtonClicked, setIsButtonClicked] = useState(false);
     const [selectDocId, setSelectDocId] = useState<number | null>(null);
@@ -44,7 +46,13 @@ const DoctorList: React.FC<DoctorListProps> = ({onAddDoctor}) => {
     const submitPincode = async () => {
         if (selectDocId === null) return;
         try {
-            await postDocPincode(selectDocId, pw);
+            const response = await postDocPincode(selectDocId, pw);
+            // doctorId를 localStorage와 store에 저장
+            if (response.data?.doctorId) {
+                const doctorIdStr = response.data.doctorId.toString();
+                localStorage.setItem('doctorId', doctorIdStr);
+                setDoctorId(doctorIdStr);
+            }
             setIsButtonClicked(false);
             setIsValid(true);
             setPw("");

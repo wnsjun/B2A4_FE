@@ -1,6 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { wsService } from '../../services/websocketService';
 import { sendVoiceMessage } from '../../apis/chatApi';
+import { useChatStore } from '../../hooks/useChatStore';
 
 interface ChatInputProps {
   chatRoomId: string;
@@ -14,6 +15,7 @@ const ChatInput: React.FC<ChatInputProps> = ({ chatRoomId, isEnabled, userRole =
   const [isSending, setIsSending] = useState(false);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
+  const { addMessage } = useChatStore();
 
   const handleSendMessage = () => {
     if (message.trim() && chatRoomId) {
@@ -42,19 +44,18 @@ const ChatInput: React.FC<ChatInputProps> = ({ chatRoomId, isEnabled, userRole =
 
       mediaRecorder.onstop = async () => {
         const audioBlob = new Blob(audioChunksRef.current, {
-          type: 'audio/wav',
+          type: 'audio/webm',
         });
 
         // 의사만 음성 메시지 전송 가능
         if (userRole === 'doctor') {
           setIsSending(true);
           try {
-            const audioFile = new File([audioBlob], `voice-${Date.now()}.wav`, {
-              type: 'audio/wav',
+            const audioFile = new File([audioBlob], `voice-${Date.now()}.webm`, {
+              type: 'audio/webm',
             });
             const response = await sendVoiceMessage(chatRoomId, audioFile);
             console.log('[ChatInput] Voice message sent successfully:', response);
-            // 음성 메시지는 WebSocket 브로드캐스트로 수신됨
           } catch (error) {
             console.error('[ChatInput] Failed to send voice message:', error);
             alert('음성 메시지 전송에 실패했습니다.');
@@ -86,10 +87,20 @@ const ChatInput: React.FC<ChatInputProps> = ({ chatRoomId, isEnabled, userRole =
     }
   };
 
+  // 환자용과 의사용에 따라 다른 크기 설정
+  const isPatient = userRole === 'patient';
+  const inputWidth = isPatient ? 'flex-1' : 'w-[740px]';
+  const containerHeight = isPatient ? 'h-auto' : 'h-[88px]';
+  const inputHeight = isPatient ? 'h-12' : 'h-[88px]';
+  const fontSize = isPatient ? 'text-base' : 'text-[32px]';
+  const fontSizeSpan = isPatient ? 'text-sm' : 'text-[32px]';
+  const buttonWidth = isPatient ? 'px-6 py-2' : 'w-[244px] h-[88px]';
+  const buttonText = isPatient ? '전송' : '대화입력';
+
   if (!isEnabled) {
     return (
-      <div className="bg-[#F5F5F5] border-t border-[#E8EAED] p-4">
-        <div className="text-center text-[#999] text-sm">
+      <div className="bg-[#3A3F47] p-4">
+        <div className="text-center text-[#B0B5BC] text-xs">
           진료가 종료되었습니다.
         </div>
       </div>
@@ -97,46 +108,38 @@ const ChatInput: React.FC<ChatInputProps> = ({ chatRoomId, isEnabled, userRole =
   }
 
   return (
-    <div className="bg-white border-t border-[#E8EAED] p-4">
-      <div className="flex gap-2">
-        {/* 텍스트 입력 */}
-        <input
-          type="text"
-          value={message}
-          onChange={(e) => setMessage(e.target.value)}
-          onKeyPress={handleKeyPress}
-          placeholder="메시지를 입력하세요"
-          disabled={!isEnabled || isSending}
-          className="flex-1 border border-[#E8EAED] rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-[#5B9EFF] disabled:bg-[#F5F5F5] disabled:text-[#999]"
-        />
+    <div className={`bg-[#3A3F47] flex-shrink-0 flex items-center gap-3 px-4 py-3 ${containerHeight} ${isPatient ? 'flex-wrap' : ''}`}>
+      {/* 텍스트 입력 */}
+      <input
+        type="text"
+        value={message}
+        onChange={(e) => setMessage(e.target.value)}
+        onKeyPress={handleKeyPress}
+        placeholder="대화를 입력하세요"
+        disabled={!isEnabled || isSending}
+        className={`${inputWidth} bg-transparent border-b-2 border-[#A9ACB2] px-0 py-0 ${inputHeight} placeholder-[#A9ACB2] focus:outline-none focus:border-[#0C58FF] disabled:placeholder-[#7A8090] disabled:text-[#7A8090] ${fontSize}`}
+        style={{
+          color: '#FFFFFF',
+          fontFamily: 'Inter',
+          fontWeight: '600',
+          lineHeight: '150%',
+          letterSpacing: isPatient ? '0px' : '-0.64px',
+        }}
+      />
 
-        {/* 의사용: 음성 녹음 버튼 */}
-        {userRole === 'doctor' && (
-          <button
-            onClick={isRecording ? stopRecording : startRecording}
-            disabled={!isEnabled || isSending}
-            className={`px-4 py-3 rounded-lg font-medium transition-colors ${
-              isRecording
-                ? 'bg-red-500 text-white hover:bg-red-600'
-                : isEnabled && !isSending
-                  ? 'bg-[#F5F5F5] text-[#666B76] hover:bg-[#E8EAED]'
-                  : 'bg-[#CCC] text-[#999] cursor-not-allowed'
-            }`}
-            title={isRecording ? '녹음 중지' : '음성 녹음'}
-          >
-            {isSending ? '⏳' : isRecording ? '⏹️' : '🎤'}
-          </button>
-        )}
-
-        {/* 전송 버튼 */}
-        <button
-          onClick={handleSendMessage}
-          disabled={!message.trim() || !isEnabled || isSending}
-          className="px-6 py-3 bg-[#5B9EFF] text-white rounded-lg font-medium hover:bg-[#4A8AE8] disabled:bg-[#CCC] disabled:cursor-not-allowed transition-colors"
-        >
-          {isSending ? '전송 중...' : '전송'}
-        </button>
-      </div>
+      {/* 대화입력 버튼 */}
+      <button
+        onClick={handleSendMessage}
+        disabled={!message.trim() || !isEnabled || isSending}
+        style={{
+          background: 'linear-gradient(207deg, #0C58FF 13.18%, #3FB6FF 91.66%)',
+        }}
+        className={`${isPatient ? `${buttonWidth} rounded-lg text-white text-xs font-medium` : `w-[244px] h-[88px] rounded-[12px] text-white flex items-center justify-center`} disabled:opacity-50 disabled:cursor-not-allowed transition-opacity flex items-center justify-center flex-shrink-0`}
+      >
+        <span className={`font-[600] leading-[150%] ${fontSizeSpan}`} style={{ fontFamily: 'Inter', letterSpacing: isPatient ? '0px' : '-0.64px' }}>
+          {buttonText}
+        </span>
+      </button>
     </div>
   );
 };

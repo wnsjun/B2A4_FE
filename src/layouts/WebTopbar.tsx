@@ -11,9 +11,10 @@ interface Props {
   text_img?: string;
   showDoctorReselect?: boolean;
   onDoctorReselectClick?: () => void;
+  showConsultationList?: boolean;
 }
 
-const WebTopbar = ({ text, text_img, showDoctorReselect, onDoctorReselectClick }: Props) => {
+const WebTopbar = ({ text, text_img, showDoctorReselect, onDoctorReselectClick, showConsultationList }: Props) => {
   const navigate = useNavigate();
   const { clearAuth } = useAuthStore();
   const [hospitalName, setHospitalName] = useState('');
@@ -31,6 +32,10 @@ const WebTopbar = ({ text, text_img, showDoctorReselect, onDoctorReselectClick }
       onDoctorReselectClick();
     }
     navigate('/select-doctor');
+  };
+
+  const handleConsultationListClick = () => {
+    navigate('/doctor/consultation-list');
   };
 
   const handleClickLogOut = async () => {
@@ -88,6 +93,15 @@ const WebTopbar = ({ text, text_img, showDoctorReselect, onDoctorReselectClick }
                 className="w-6 h-6 hover:cursor-pointer"
                 onClick={handleProfileClick}
               />
+            </div>
+          )}
+
+          {showConsultationList && (
+            <div
+              className="flex flex-row gap-2 items-center cursor-pointer"
+              onClick={handleConsultationListClick}
+            >
+              <p className="text-[#343841]">진료목록</p>
             </div>
           )}
 

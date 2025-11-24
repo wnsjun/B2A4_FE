@@ -7,12 +7,14 @@ interface AuthState {
   isLoggedIn: boolean;
   accessToken: string | null;
   refreshToken: string | null;
+  doctorId: string | null;
 }
 
 // 2. 액션(Actions)의 타입 정의
 interface AuthActions {
   setAccessToken: (token: string) => void;
   setTokens: (accessToken: string, refreshToken: string | null) => void;
+  setDoctorId: (doctorId: string) => void;
   clearAuth: () => void;
 }
 
@@ -26,6 +28,7 @@ export const useAuthStore = create<AuthStore>((set) => ({
   isLoggedIn: false,
   accessToken: null,
   refreshToken: null,
+  doctorId: null,
 
   // Actions 구현
   setAccessToken: (token) => set({ accessToken: token }),
@@ -38,11 +41,14 @@ export const useAuthStore = create<AuthStore>((set) => ({
     });
   },
 
+  setDoctorId: (doctorId) => set({ doctorId }),
+
   clearAuth: () => {
     set({
       isLoggedIn: false,
       accessToken: null,
       refreshToken: null,
+      doctorId: null,
     });
   },
 }));

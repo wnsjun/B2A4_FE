@@ -99,6 +99,14 @@
   font-display: swap;
 }
 
+:root {
+  /* Color Variables */
+  --color-main-variant: #3D84FF;
+  --Greyscale-White: #FFF;
+  --Greyscale-100: #F4F6F8;
+  --Greyscale-900: #1A1A1A;
+}
+
 html {
   overflow-y: scroll;
 }

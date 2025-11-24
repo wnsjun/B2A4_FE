@@ -67,7 +67,7 @@ const QrCheckIn = () => {
   if (isLoading) {
     return (
       <div className="flex flex-col items-center h-screen bg-white">
-        <WebTopbar showDoctorReselect={true} />
+        <WebTopbar showDoctorReselect={true} showConsultationList={true} />
         <div className="flex-1 flex items-center justify-center">
           <div>로딩 중...</div>
         </div>
@@ -78,7 +78,7 @@ const QrCheckIn = () => {
   if (error) {
     return (
       <div className="flex flex-col items-center h-screen bg-white">
-        <WebTopbar showDoctorReselect={true} />
+        <WebTopbar showDoctorReselect={true} showConsultationList={true} />
         <div className="flex-1 flex items-center justify-center">
           <div className="text-red-500">{error}</div>
         </div>
@@ -92,7 +92,7 @@ const QrCheckIn = () => {
 
   return (
     <div className="flex flex-col items-center h-screen bg-white overflow-hidden">
-      <WebTopbar showDoctorReselect={true} />
+      <WebTopbar showDoctorReselect={true} showConsultationList={true} />
 
       <div className="flex-1 pt-[91px] flex flex-col items-center gap-[49px] w-full overflow-y-auto">
         {/* 의사 정보 영역 */}

@@ -28,7 +28,10 @@ class WebSocketService {
 
         // stompjs v2.3.3 방식: connect(connectHeaders, connectCallback, errorCallback)
         this.stompClient.connect(
-          { Authorization: `Bearer ${config.accessToken}` }, // connectHeaders
+          {
+            Authorization: `Bearer ${config.accessToken}`,
+            'heart-beat': '10000,10000', // 클라이언트→서버: 10초, 서버→클라이언트: 10초 (연결 유지용)
+          }, // connectHeaders
           () => {
             // onConnect callback
             console.log('[WebSocket] Connected');
@@ -158,17 +161,21 @@ class WebSocketService {
    */
   private handleChatMessage(message: StompMessage): void {
     try {
+      console.log('[WebSocket] handleChatMessage called with:', message.body);
       const body = JSON.parse(message.body);
+      console.log('[WebSocket] Parsed body:', body);
 
-      // 텍스트/음성 메시지 처리
-      if (body.type === 'message' || body.type === 'text' || body.type === 'voice') {
+      // 텍스트/음성 메시지 처리 (type 또는 messageType 필드 확인)
+      const messageType = body.type || body.messageType;
+      if (messageType === 'message' || messageType === 'text' || messageType === 'voice') {
+        console.log('[WebSocket] Adding chat message...');
         const chatStore = useChatStore.getState();
         const chatMessage: ChatMessage = {
-          id: body.id || `${Date.now()}`,
-          senderId: body.senderId || body.userId || 'unknown',
-          type: body.type === 'voice' ? 'voice' : 'text',
+          id: body.id || body.messageId || `${Date.now()}`,
+          senderId: String(body.senderId || body.userId || 'unknown'),
+          type: messageType === 'voice' ? 'voice' : 'text',
           content: body.content || '',
-          timestamp: body.timestamp || new Date().toISOString(),
+          timestamp: body.timestamp || body.createdAt || new Date().toISOString(),
         };
         chatStore.addMessage(chatMessage);
         console.log('[WebSocket] Message added:', chatMessage);
@@ -178,11 +185,11 @@ class WebSocketService {
       if (body.type === 'system') {
         const chatStore = useChatStore.getState();
         const systemMessage: ChatMessage = {
-          id: body.id || `${Date.now()}`,
+          id: body.id || body.messageId || `${Date.now()}`,
           senderId: 'system',
           type: 'system',
           content: body.content || '',
-          timestamp: body.timestamp || new Date().toISOString(),
+          timestamp: body.timestamp || body.createdAt || new Date().toISOString(),
           action: body.action,
         };
         chatStore.addMessage(systemMessage);
