@@ -265,7 +265,7 @@ const PatientChat = () => {
       </div>
 
       {/* 메시지 영역 */}
-      <div className="flex-1 overflow-y-auto px-5 py-3 space-y-3">
+      <div className="flex-[0.7] overflow-y-auto px-5 py-3 space-y-3">
         {messages.length === 0 && (
           <div className="flex items-center justify-center h-full">
             <div className="text-center text-[#7A8090]">
@@ -287,7 +287,7 @@ const PatientChat = () => {
       </div>
 
       {/* 입력 영역 */}
-      <div className="flex-shrink-0 px-5 py-3 bg-[#3A3F47]">
+      <div className="flex-[0.3] overflow-y-auto px-5 py-3 bg-[#3A3F47]">
         {/* 빠른 응답 버튼들 */}
         {!isChatClosed && (
           <div className="mb-2 flex gap-2 overflow-x-auto pb-2" style={{ scrollBehavior: 'smooth' }}>
