@@ -84,7 +84,6 @@ const HospitalProfileEdit = () => {
         console.error('정보 불러오기 실패:', error);
         alert('정보를 불러오지 못했습니다.');
       } finally {
-        setIsLoading(false);
         alert('병원 정보를 불러오지 못했습니다. 콘솔을 확인해주세요.');
       }
     };
@@ -243,8 +242,6 @@ const HospitalProfileEdit = () => {
       alert('수정 중 오류가 발생했습니다.');
     }
   };
-
-  if (isLoading) return <div>로딩 중...</div>;
 
   return (
     <div>
