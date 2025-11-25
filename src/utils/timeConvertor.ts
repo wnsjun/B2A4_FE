@@ -8,29 +8,30 @@ export interface IOperatingTime {
   sun: string | null;
 }
 
-// 요일 변환 맵
-const dayMap: Record<string, string> = {
-  mon: 'MON',
-  tue: 'TUE',
-  wed: 'WED',
-  thu: 'THU',
-  fri: 'FRI',
-  sat: 'SAT',
-  sun: 'SUN',
-};
-
-/**
- * 프론트엔드의 시간 문자열("09 : 00 ~ 18 : 00")을
- * 백엔드 포맷({ openTime: "09:00", ... })으로 변환하는 함수
- */
+// 1. [보낼 때] 프론트 문자열 -> 백엔드 객체 변환
+// (수정할 때 API로 보내는 용도)
 export const transformOperatingData = (operatingTime: IOperatingTime) => {
   const operatingHours: any = {};
   const breakTimes: any = {};
 
+  // 요일 매핑 (소문자 -> 대문자)
+  const dayMapToUp: Record<string, string> = {
+    mon: 'MON',
+    tue: 'TUE',
+    wed: 'WED',
+    thu: 'THU',
+    fri: 'FRI',
+    sat: 'SAT',
+    sun: 'SUN',
+  };
+
+  const SPLIT_TIME = ' ~ ';
+  const SPLIT_BREAK = ' 휴게: ';
+
   Object.keys(operatingTime).forEach((key) => {
     const dayKey = key as keyof IOperatingTime;
     const rawTime = operatingTime[dayKey];
-    const upperDay = dayMap[dayKey];
+    const upperDay = dayMapToUp[dayKey];
 
     // 1. 휴무거나 데이터가 없는 경우
     if (!rawTime || rawTime === '휴무') {
@@ -38,13 +39,17 @@ export const transformOperatingData = (operatingTime: IOperatingTime) => {
       return;
     }
 
-    // 2. 데이터가 있는 경우 파싱
+    // 2. 데이터 파싱
     try {
-      // " 휴게: "를 기준으로 분리
-      const [mainPart, breakPart] = rawTime.split(' 휴게: ');
+      let mainPart = rawTime;
+      let breakPart = '';
 
-      const clean = (str: string) => str.replace(/\s/g, ''); // 공백 제거
-      const [openStr, closeStr] = mainPart.split(' ~ ');
+      if (rawTime.includes(SPLIT_BREAK)) {
+        [mainPart, breakPart] = rawTime.split(SPLIT_BREAK);
+      }
+
+      const clean = (str: string) => str.replace(/\s/g, '');
+      const [openStr, closeStr] = mainPart.split(SPLIT_TIME);
 
       operatingHours[upperDay] = {
         openTime: clean(openStr),
@@ -54,22 +59,26 @@ export const transformOperatingData = (operatingTime: IOperatingTime) => {
 
       // 휴게시간 처리
       if (breakPart) {
-        const [breakStart, breakEnd] = breakPart.split(' ~ ');
+        const [breakStart, breakEnd] = breakPart.split(SPLIT_TIME);
         breakTimes[upperDay] = {
           breakStartTime: clean(breakStart),
           breakEndTime: clean(breakEnd),
         };
       }
     } catch (e) {
-      console.error(`${upperDay} 시간 파싱 에러:`, e);
-      operatingHours[upperDay] = { isClosed: true }; // 에러나면 닫음 처리
+      console.error(`${upperDay} 파싱 에러:`, e);
+      operatingHours[upperDay] = { isClosed: true };
     }
   });
 
   return { operatingHours, breakTimes };
 };
 
-export const reverseTransformOperatingData = (serverData: any, serverBreak: any) => {
+// 2. ⭐️ [받을 때] 백엔드 배열 -> 프론트 문자열 변환 ⭐️
+// (수정 페이지 들어갔을 때 데이터 채우는 용도)
+// 중요: serverData가 '배열'로 들어옵니다!
+export const reverseTransformOperatingData = (serverData: any[], serverBreak: any) => {
+  // 초기값 (모두 null)
   const result: any = {
     mon: null,
     tue: null,
@@ -80,8 +89,8 @@ export const reverseTransformOperatingData = (serverData: any, serverBreak: any)
     sun: null,
   };
 
-  // 대문자 키(MON)를 소문자 키(mon)로 매핑
-  const dayMap: Record<string, string> = {
+  // 요일 매핑 (대문자 -> 소문자)
+  const dayMapToLow: Record<string, string> = {
     MON: 'mon',
     TUE: 'tue',
     WED: 'wed',
@@ -91,44 +100,47 @@ export const reverseTransformOperatingData = (serverData: any, serverBreak: any)
     SUN: 'sun',
   };
 
-  if (!serverData) return result;
+  // 배열이 아니거나 없으면 빈 객체 반환
+  if (!serverData || !Array.isArray(serverData)) return result;
 
-  Object.keys(serverData).forEach((upperDay) => {
-    const lowerDay = dayMap[upperDay];
-    if (!lowerDay) return;
-
-    const timeInfo = serverData[upperDay];
+  serverData.forEach((info) => {
+    const lowerKey = dayMapToLow[info.dayOfWeek];
+    if (!lowerKey) return;
 
     // 휴무인 경우
-    if (timeInfo.isClosed) {
-      result[lowerDay] = '휴무';
+    if (info.isClosed) {
+      result[lowerKey] = '휴무';
       return;
     }
 
-    // 영업 시간 문자열 만들기 (예: "09:00 ~ 18:00")
-    let timeString = `${timeInfo.openTime} ~ ${timeInfo.closeTime}`;
+    // 시간 문자열 생성 (예: "09:00 ~ 18:00")
+    let timeString = `${info.openTime} ~ ${info.closeTime}`;
 
-    // 휴게 시간이 있다면 붙이기
-    if (serverBreak && serverBreak[upperDay]) {
-      const breakInfo = serverBreak[upperDay];
-      if (breakInfo.breakStartTime && breakInfo.breakEndTime) {
-        timeString += ` 휴게: ${breakInfo.breakStartTime} ~ ${breakInfo.breakEndTime}`;
+    // 휴게 시간 확인 (배열 안에 같이 들어있는 경우)
+    if (info.breakStartTime && info.breakEndTime) {
+      timeString += ` 휴게: ${info.breakStartTime} ~ ${info.breakEndTime}`;
+    }
+    // 혹시 휴게시간이 별도 객체(serverBreak)로 들어오는 경우 (구버전 대응)
+    else if (serverBreak && serverBreak[info.dayOfWeek]) {
+      const brk = serverBreak[info.dayOfWeek];
+      if (brk.breakStartTime && brk.breakEndTime) {
+        timeString += ` 휴게: ${brk.breakStartTime} ~ ${brk.breakEndTime}`;
       }
     }
 
-    result[lowerDay] = timeString;
+    result[lowerKey] = timeString;
   });
 
   return result;
 };
 
+// 3. [보여줄 때] 프로필 뷰용 변환 함수 (그대로 유지)
 export interface ProcessedOperatingDay {
   day: string;
   hours: string;
   break: string | null;
 }
 
-// ⭐️ 요일 매핑 테이블
 const dayMapKR: Record<string, string> = {
   MON: '월',
   TUE: '화',
@@ -160,7 +172,7 @@ export const processOperatingTimeForDisplay = (
   if (!serverOperatingHours || !Array.isArray(serverOperatingHours)) return [];
 
   return serverOperatingHours.map((dayInfo) => {
-    const krDay = dayMapKR[dayInfo.dayOfWeek] || dayInfo.dayOfWeek; // MON -> 월
+    const krDay = dayMapKR[dayInfo.dayOfWeek] || dayInfo.dayOfWeek;
     const isClosed = dayInfo.isClosed;
 
     // 1. 진료 시간 문자열 생성 (초 제거)
@@ -168,15 +180,10 @@ export const processOperatingTimeForDisplay = (
 
     let breakStr: string | null = null;
 
-    // 2. 휴게 시간 처리 (breakStartTime과 breakEndTime이 있을 때만 문자열 생성)
     if (!isClosed && dayInfo.breakStartTime && dayInfo.breakEndTime) {
       // 예: "12:00 - 13:00 휴게시간"
       breakStr = `${formatTime(dayInfo.breakStartTime)} - ${formatTime(dayInfo.breakEndTime)} 휴게시간`;
     }
-    // else if (!isClosed) {
-    //   // 진료는 하지만 휴게 시간 정보가 없는 경우
-    //   breakStr = '휴게시간 없음';
-    // }
 
     return {
       day: krDay,

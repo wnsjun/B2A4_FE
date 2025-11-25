@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import { useForm, Controller } from 'react-hook-form'; // 1. RHF import
 import WeeklyButton from './WeeklyButton';
 import FormInput from './FormInput';
@@ -22,6 +22,7 @@ interface Step2FormProps {
   onDayToggle: (dayKey: keyof IOperatingTime) => void;
   onBatchTimeApply: (time: string) => void;
   onBatchDayOffApply: (dayOff: boolean) => void;
+  isEdit?: boolean;
 }
 
 const weeklist = [
@@ -35,6 +36,51 @@ const weeklist = [
 ];
 
 // --- ('parseTime' utility function remains unchanged) ---
+// const parseTime = (timeString: string | null) => {
+//   const defaults = {
+//     start: { hour: '', minute: '' },
+//     end: { hour: '', minute: '' },
+//     break: { start: { hour: '', minute: '' }, end: { hour: '', minute: '' } },
+//     isBreak: false,
+//     isDayOff: timeString === '휴무',
+//     mainTimeString: '',
+//     breakTimeString: '',
+//   };
+
+//   if (!timeString || timeString === '휴무') {
+//     return defaults;
+//   }
+
+//   const parts = timeString.split(' 휴게: ');
+//   const mainTimeStr = parts[0];
+//   const breakTimeStr = parts[1];
+
+//   const mainTimes = mainTimeStr.split(' ~ ');
+//   const startTimeParts = mainTimes[0]?.split(' : ') || ['', ''];
+//   const endTimeParts = mainTimes[1]?.split(' : ') || ['', ''];
+
+//   const result = {
+//     ...defaults,
+//     start: { hour: startTimeParts[0] || '', minute: startTimeParts[1] || '' },
+//     end: { hour: endTimeParts[0] || '', minute: endTimeParts[1] || '' },
+//     mainTimeString: mainTimeStr,
+//   };
+
+//   if (breakTimeStr) {
+//     result.isBreak = true;
+//     result.breakTimeString = breakTimeStr;
+//     const breakTimes = breakTimeStr.split(' ~ ');
+//     const breakStartParts = breakTimes[0]?.split(' : ') || ['', ''];
+//     const breakEndParts = breakTimes[1]?.split(' : ') || ['', ''];
+//     result.break = {
+//       start: { hour: breakStartParts[0] || '', minute: breakStartParts[1] || '' },
+//       end: { hour: breakEndParts[0] || '', minute: breakEndParts[1] || '' },
+//     };
+//   }
+
+//   return result;
+// };
+
 const parseTime = (timeString: string | null) => {
   const defaults = {
     start: { hour: '', minute: '' },
@@ -50,30 +96,40 @@ const parseTime = (timeString: string | null) => {
     return defaults;
   }
 
-  const parts = timeString.split(' 휴게: ');
+  // 1. ⭐️ [핵심] 띄어쓰기 유무 상관없이 쪼개기 위해 정규식이나 유연한 split 사용
+  // " 휴게: " 또는 "휴게:" 모두 대응
+  const parts = timeString.split(/ 휴게: |휴게:/);
   const mainTimeStr = parts[0];
   const breakTimeStr = parts[1];
 
-  const mainTimes = mainTimeStr.split(' ~ ');
-  const startTimeParts = mainTimes[0]?.split(' : ') || ['', ''];
-  const endTimeParts = mainTimes[1]?.split(' : ') || ['', ''];
+  // 2. ⭐️ " ~ " 또는 "~" (물결 앞뒤 공백 유연하게)
+  const mainTimes = mainTimeStr.split(/ ~ |~/);
+
+  // 3. ⭐️ " : " 또는 ":" (콜론 앞뒤 공백 유연하게) -> 이게 제일 중요!
+  const splitTime = (str: string) => (str ? str.split(/ : |:/) : ['', '']);
+
+  const startTimeParts = splitTime(mainTimes[0]);
+  const endTimeParts = splitTime(mainTimes[1]);
 
   const result = {
     ...defaults,
-    start: { hour: startTimeParts[0] || '', minute: startTimeParts[1] || '' },
-    end: { hour: endTimeParts[0] || '', minute: endTimeParts[1] || '' },
+    // 공백 제거(trim)를 한 번 더 해서 안전하게 넣기
+    start: { hour: startTimeParts[0].trim(), minute: startTimeParts[1].trim() },
+    end: { hour: endTimeParts[0].trim(), minute: endTimeParts[1].trim() },
     mainTimeString: mainTimeStr,
   };
 
   if (breakTimeStr) {
     result.isBreak = true;
     result.breakTimeString = breakTimeStr;
-    const breakTimes = breakTimeStr.split(' ~ ');
-    const breakStartParts = breakTimes[0]?.split(' : ') || ['', ''];
-    const breakEndParts = breakTimes[1]?.split(' : ') || ['', ''];
+
+    const breakTimes = breakTimeStr.split(/ ~ |~/);
+    const breakStartParts = splitTime(breakTimes[0]);
+    const breakEndParts = splitTime(breakTimes[1]);
+
     result.break = {
-      start: { hour: breakStartParts[0] || '', minute: breakStartParts[1] || '' },
-      end: { hour: breakEndParts[0] || '', minute: breakEndParts[1] || '' },
+      start: { hour: breakStartParts[0].trim(), minute: breakStartParts[1].trim() },
+      end: { hour: breakEndParts[0].trim(), minute: breakEndParts[1].trim() },
     };
   }
 
@@ -113,13 +169,14 @@ const Step2Form = ({
   onDayToggle,
   onBatchTimeApply,
   onBatchDayOffApply,
+  isEdit = false,
 }: Step2FormProps) => {
   // 3. 'Locked' state는 폼 데이터가 아닌 UI 상태이므로 useState로 유지
   const [clinicLocked, setClinicLocked] = useState(false);
   const [breakLocked, setBreakLocked] = useState(false);
 
   // 4. useForm hook으로 폼 상태 관리
-  const { control, reset, watch, setValue, getValues } = useForm<IFormInputs>({
+  const { control, reset, watch, setValue } = useForm<IFormInputs>({
     defaultValues,
   });
 
@@ -152,7 +209,6 @@ const Step2Form = ({
   // // 5. UI 로직을 위해 RHF state를 'watch'
   // const dayOff = watch('dayOff');
   // const breakTime = watch('breakTime');
-  const prevSelectedDaysRef = useRef<string[]>([]);
 
   const isSingleSelection = selectedDays.length === 1;
 
@@ -179,94 +235,140 @@ const Step2Form = ({
     return `${breakHourStart} : ${breakMinuteStart} ~ ${breakHourEnd} : ${breakMinuteEnd}`;
   };
 
+  // useEffect(() => {
+  //   // 'selectedDays'가 실제로 변경되었는지 확인
+  //   const selectedDaysString = JSON.stringify(selectedDays.sort());
+  //   const prevSelectedDaysString = JSON.stringify(prevSelectedDaysRef.current.sort());
+  //   const selectedDaysChanged = selectedDaysString !== prevSelectedDaysString;
+
+  //   // 공통 폼 리셋 함수
+  //   const resetForm = () => {
+  //     reset(defaultValues);
+  //     setClinicLocked(false);
+  //     setBreakLocked(false);
+  //   };
+
+  //   // ★★★ 1. (Problem 1: isDirty 보존 / Problem 2: '휴무' 버튼)
+  //   // '입력 완료' 또는 '휴무 토글' 등으로 prop이 바뀌었지만 요일 선택은 그대로일 때
+  //   if (!selectedDaysChanged && selectedDays.length > 0) {
+  //     // ★★★ '휴무' 버튼이 눌렸을 때, 이 로직이 폼 상태를 되돌리지 않도록
+  //     //     (isDirty 보존을 위해) 그냥 return만 합니다.
+  //     //     'handleDayOffToggle'의 setValue()가 UI를 즉시 변경할 수 있게 합니다.
+  //     return;
+  //   }
+
+  //   // --- (이 하단은 selectedDays가 0이거나, selectedDays가 변경됐을 때만 실행) ---
+
+  //   if (selectedDays.length === 0) {
+  //     resetForm();
+  //   } else if (isSingleSelection) {
+  //     // (단일 선택: 데이터 로드)
+  //     const dayKey = selectedDays[0];
+  //     const savedTime = operatingTime[dayKey];
+  //     const parsed = parseTime(savedTime);
+
+  //     reset({
+  //       startHour: parsed.start.hour,
+  //       startMinute: parsed.start.minute,
+  //       endHour: parsed.end.hour,
+  //       endMinute: parsed.end.minute,
+  //       breakTime: parsed.isBreak,
+  //       breakHourStart: parsed.break.start.hour,
+  //       breakMinuteStart: parsed.break.start.minute,
+  //       breakHourEnd: parsed.break.end.hour,
+  //       breakMinuteEnd: parsed.break.end.minute,
+  //       dayOff: parsed.isDayOff, // (selectedDays가 바뀌었으므로 prop 값으로 reset)
+  //     });
+
+  //     setClinicLocked(!!savedTime && !parsed.isDayOff);
+  //     setBreakLocked(parsed.isBreak);
+  //   } else {
+  //     // (다중 선택)
+  //     const firstDayKey = selectedDays[0];
+  //     const firstTime = operatingTime[firstDayKey];
+
+  //     // ★★★ 3. (Problem 3: 폼 초기화) - 이것도 해결됨
+  //     const allSame = selectedDays.every((dayKey) => operatingTime[dayKey] === firstTime);
+
+  //     if (allSame) {
+  //       // (A) '월수금' (모두 09시) -> 데이터 로드
+  //       const parsed = parseTime(firstTime);
+  //       reset({
+  //         startHour: parsed.start.hour,
+  //         startMinute: parsed.start.minute,
+  //         endHour: parsed.end.hour,
+  //         endMinute: parsed.end.minute,
+  //         breakTime: parsed.isBreak,
+  //         breakHourStart: parsed.break.start.hour,
+  //         breakMinuteStart: parsed.break.start.minute,
+  //         breakHourEnd: parsed.break.end.hour,
+  //         breakMinuteEnd: parsed.break.end.minute,
+  //         dayOff: parsed.isDayOff,
+  //       });
+  //       setClinicLocked(!!firstTime && !parsed.isDayOff);
+  //       setBreakLocked(parsed.isBreak);
+  //     } else {
+  //       // (B) '월'(09시) + '화'(null) -> 폼을 비움
+  //       resetForm();
+  //     }
+  //   }
+
+  //   // '이전' 선택일을 현재로 업데이트
+  //   if (selectedDaysChanged) {
+  //     prevSelectedDaysRef.current = selectedDays;
+  //   }
+  // }, [selectedDays, operatingTime, isSingleSelection, reset, getValues]);
+
   useEffect(() => {
-    // 'selectedDays'가 실제로 변경되었는지 확인
-    const selectedDaysString = JSON.stringify(selectedDays.sort());
-    const prevSelectedDaysString = JSON.stringify(prevSelectedDaysRef.current.sort());
-    const selectedDaysChanged = selectedDaysString !== prevSelectedDaysString;
-
-    // 공통 폼 리셋 함수
-    const resetForm = () => {
-      reset(defaultValues);
-      setClinicLocked(false);
-      setBreakLocked(false);
-    };
-
-    // ★★★ 1. (Problem 1: isDirty 보존 / Problem 2: '휴무' 버튼)
-    // '입력 완료' 또는 '휴무 토글' 등으로 prop이 바뀌었지만 요일 선택은 그대로일 때
-    if (!selectedDaysChanged && selectedDays.length > 0) {
-      // ★★★ '휴무' 버튼이 눌렸을 때, 이 로직이 폼 상태를 되돌리지 않도록
-      //     (isDirty 보존을 위해) 그냥 return만 합니다.
-      //     'handleDayOffToggle'의 setValue()가 UI를 즉시 변경할 수 있게 합니다.
+    // 1. 선택된 요일이나 운영시간 데이터가 없으면 리셋 X (혹은 초기화)
+    if (selectedDays.length === 0) {
+      if (isEdit) {
+        reset(defaultValues); // 필요 시 주석 해제
+        setClinicLocked(false); // 버튼 상태 초기화
+        setBreakLocked(false);
+      }
       return;
     }
 
-    // --- (이 하단은 selectedDays가 0이거나, selectedDays가 변경됐을 때만 실행) ---
+    // 2. 현재 선택된 첫 번째 요일 가져오기
+    const currentDay = selectedDays[0];
+    const timeString = operatingTime[currentDay];
 
-    if (selectedDays.length === 0) {
-      resetForm();
-    } else if (isSingleSelection) {
-      // (단일 선택: 데이터 로드)
-      const dayKey = selectedDays[0];
-      const savedTime = operatingTime[dayKey];
-      const parsed = parseTime(savedTime);
+    // 📸 CCTV: 데이터가 잘 넘어왔는지 확인! (콘솔을 꼭 확인하세요)
+    console.log(`[Step2Form] 요일: ${currentDay}, 시간문자열:`, timeString);
 
-      reset({
-        startHour: parsed.start.hour,
-        startMinute: parsed.start.minute,
-        endHour: parsed.end.hour,
-        endMinute: parsed.end.minute,
-        breakTime: parsed.isBreak,
-        breakHourStart: parsed.break.start.hour,
-        breakMinuteStart: parsed.break.start.minute,
-        breakHourEnd: parsed.break.end.hour,
-        breakMinuteEnd: parsed.break.end.minute,
-        dayOff: parsed.isDayOff, // (selectedDays가 바뀌었으므로 prop 값으로 reset)
-      });
+    // 3. 시간 문자열 파싱 ("09:00 ~ 18:00" -> { startHour: "09", ... })
+    const parsed = parseTime(timeString);
 
-      setClinicLocked(!!savedTime && !parsed.isDayOff);
-      setBreakLocked(parsed.isBreak);
-    } else {
-      // (다중 선택)
-      const firstDayKey = selectedDays[0];
-      const firstTime = operatingTime[firstDayKey];
+    console.log('[Step2Form] 파싱 결과:', parsed);
 
-      // ★★★ 3. (Problem 3: 폼 초기화) - 이것도 해결됨
-      const allSame = selectedDays.every((dayKey) => operatingTime[dayKey] === firstTime);
+    // 4. 폼(input)에 값 강제 주입 (reset)
+    reset({
+      startHour: parsed.start.hour,
+      startMinute: parsed.start.minute,
+      endHour: parsed.end.hour,
+      endMinute: parsed.end.minute,
 
-      if (allSame) {
-        // (A) '월수금' (모두 09시) -> 데이터 로드
-        const parsed = parseTime(firstTime);
-        reset({
-          startHour: parsed.start.hour,
-          startMinute: parsed.start.minute,
-          endHour: parsed.end.hour,
-          endMinute: parsed.end.minute,
-          breakTime: parsed.isBreak,
-          breakHourStart: parsed.break.start.hour,
-          breakMinuteStart: parsed.break.start.minute,
-          breakHourEnd: parsed.break.end.hour,
-          breakMinuteEnd: parsed.break.end.minute,
-          dayOff: parsed.isDayOff,
-        });
-        setClinicLocked(!!firstTime && !parsed.isDayOff);
-        setBreakLocked(parsed.isBreak);
-      } else {
-        // (B) '월'(09시) + '화'(null) -> 폼을 비움
-        resetForm();
-      }
-    }
+      breakTime: parsed.isBreak,
+      breakHourStart: parsed.break.start.hour,
+      breakMinuteStart: parsed.break.start.minute,
+      breakHourEnd: parsed.break.end.hour,
+      breakMinuteEnd: parsed.break.end.minute,
 
-    // '이전' 선택일을 현재로 업데이트
-    if (selectedDaysChanged) {
-      prevSelectedDaysRef.current = selectedDays;
-    }
-  }, [selectedDays, operatingTime, isSingleSelection, reset, getValues]);
+      dayOff: parsed.isDayOff,
+    });
+
+    // 5. 입력 완료(잠금) 상태 동기화
+    // (값이 있으면 잠금 처리, 휴무면 잠금 해제 등 UI 상태 맞추기)
+    const hasData = !!timeString && !parsed.isDayOff;
+    setClinicLocked(hasData);
+    setBreakLocked(parsed.isBreak);
+  }, [selectedDays, operatingTime, reset]);
 
   // 핸들러 함수
   const handleClinicTimeApplyClick = () => {
     if (selectedDays.length === 0) {
-      console.error('요일을 먼저 선택해주세요.');
+      alert('요일을 먼저 선택해주세요.');
       return;
     }
 
@@ -278,7 +380,7 @@ const Step2Form = ({
     // --- '입력 완료' 로직 (잠겨있지 않을 때) ---
 
     if (!hasValidMainTime()) {
-      console.error('진료 시간을 모두 입력해주세요');
+      alert('진료 시간을 모두 입력해주세요');
       return;
     }
 
@@ -302,7 +404,7 @@ const Step2Form = ({
     if (dayOff) return; // 'dayOff'는 watch된 값
 
     if (isSingleSelection && !clinicLocked) {
-      console.error('진료 시간을 먼저 입력 완료해주세요.');
+      alert('진료 시간을 먼저 입력 완료해주세요.');
       return;
     }
 

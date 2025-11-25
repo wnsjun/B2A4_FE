@@ -1,5 +1,4 @@
 import instance from '../utils/axiosInstance';
-import { useAuthStore } from '../hooks/useAuthStore';
 
 interface LoginPayload {
   loginId: string;
@@ -60,9 +59,6 @@ export const logoutHospitalApi = async () => {
 
 export const signupPatientApi = async (payload: SignupPatientPayload) => {
   await instance.post('/api/patients/signup', payload);
-  useAuthStore.getState().clearAuth();
-  localStorage.removeItem('accessToken');
-  localStorage.removeItem('refreshToken');
 };
 
 export const signUpHospitalApi = async (formData: FormData) => {
@@ -77,9 +73,12 @@ export const getHospitalInfoApi = async (hospitalId: string) => {
   return response.data;
 };
 
-export const updateHospitalInfoApi = async (hospitalId: string, formData: FormData) => {
-  // 백엔드 주소 규칙에 따라 /api/hospitals/{id} 로 요청
-  // (만약 백엔드가 PUT을 쓴다면 .patch 대신 .put 으로 바꾸세요!)
-  const response = await instance.patch(`/api/hospitals/${hospitalId}`, formData);
+export const updateHospitalInfoApi = async (formData: FormData) => {
+  // ⭐️ [필수] Content-Type을 undefined로 설정해서 기본값을 무효화해야 합니다!
+  const response = await instance.patch(`/api/hospitals`, formData, {
+    headers: {
+      'Content-Type': undefined, // 이 한 줄이 충돌을 막아줍니다.
+    },
+  });
   return response.data;
 };

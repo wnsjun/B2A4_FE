@@ -5,22 +5,31 @@ interface FileFormProps {
   mainImage?: File | null;
   handleFileChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
   type?: string;
+  previewUrl?: string | null;
 }
 
 // 폼 컴포넌트
 
-const FileForm = ({ mainImage, handleFileChange, type }: FileFormProps) => {
-  const [previewImage, setPreviewImage] = useState<string | null>(null);
+const FileForm = ({ mainImage, handleFileChange, type, previewUrl }: FileFormProps) => {
+  const [currentObjectURL, setCurrentObjectURL] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!mainImage) {
-      setPreviewImage(null);
-      return;
+    // 1. 새로 업로드된 파일이 있으면 objectUrl 생성
+    if (mainImage && mainImage instanceof File) {
+      const objectUrl = URL.createObjectURL(mainImage);
+      setCurrentObjectURL(objectUrl);
+      return () => URL.revokeObjectURL(objectUrl);
     }
-    const objectUrl = URL.createObjectURL(mainImage);
-    setPreviewImage(objectUrl);
-    return () => URL.revokeObjectURL(objectUrl);
-  }, [mainImage]);
+
+    // 2. 새로 업로드된 파일이 없으면, 기존 URL (previewUrl)을 띄움
+    setCurrentObjectURL(previewUrl || null);
+
+    // 이 useEffect는 mainImage나 previewUrl이 바뀔 때 실행되어야 합니다.
+  }, [mainImage, previewUrl]);
+
+  // ⭐️ 렌더링에 사용할 최종 이미지 소스 (currentObjectURL이 유효한 URL입니다)
+  const imageToDisplay = currentObjectURL;
+
   return (
     <>
       <label
@@ -30,9 +39,9 @@ const FileForm = ({ mainImage, handleFileChange, type }: FileFormProps) => {
           ' w-[208px] h-[208px] bg-[#F4F6F8] rounded-full flex flex-col items-center justify-center cursor-pointer'
         }
       >
-        {previewImage ? (
+        {imageToDisplay ? (
           <img
-            src={previewImage}
+            src={imageToDisplay}
             alt="병원 사진 미리보기"
             className="w-full h-full object-cover rounded-full"
           />
