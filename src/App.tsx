@@ -142,7 +142,7 @@ function App() {
       <Route
         path="*"
         element={
-          <div style={{ width: '400px', height: '680px', margin: '0 auto' }}>
+          <div style={{ width: '380px', height: '680px', margin: '0 auto' }}>
             <Routes>
               <Route path="/" element={<SplashPageWeb />} />
               <Route path="/logointro" element={<Intro />} />
