@@ -26,7 +26,7 @@ const ChatInput: React.FC<ChatInputProps> = ({ chatRoomId, isEnabled, userRole =
 
   // 환자용과 의사용에 따라 다른 크기 설정
   const isPatient = userRole === 'patient';
-  const inputWidth = isPatient ? 'flex-1' : 'w-[740px]';
+  const inputWidth = isPatient ? 'flex-1' : 'flex-1';
   const containerHeight = isPatient ? 'h-auto' : 'h-[88px]';
   const inputHeight = isPatient ? 'h-12' : 'h-[88px]';
   const fontSize = isPatient ? 'text-base' : 'text-[32px]';

@@ -43,7 +43,7 @@ const PreQuestion1 = () => {
           수어 이미지를 보고 골라주세요
         </p>
 
-        <div className="mt-[100px] flex flex-col items-center">
+        <div className="mt-[50px] flex flex-col items-center">
           {/* 캐러셀 컨테이너 */}
           <div className="flex items-center gap-8">
             {/* 이전 버튼 */}

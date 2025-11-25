@@ -10,7 +10,7 @@ import LocationPin from "../assets/hospitalmap/locationpin.png";
 import { debounce } from "lodash";
 import { useKakaoMaps } from "../hooks/useKakaoMaps";
 import { getLocationPermissionApi, updateLocationPermissionApi } from "../apis/location";
-import { getNearbyHospitalsApi, getHospitalDetailApi } from "../apis/hospital";
+import { getNearbyHospitalsApi, getHospitalDetailApi, getAllHospitalsApi } from "../apis/hospital";
 import { addBookmarkApi, deleteBookmarkApi } from "../apis/bookmark";
 import { useAuthStore } from "../hooks/useAuthStore";
 declare global {
@@ -168,9 +168,9 @@ const Hospitalmap = () => {
           setModalOpen(true);
           setShowMyLocationMarker(false);
 
-          // 기본 위치로 주변 병원 검색
+          // 모든 병원 조회
           try {
-            const hospitalResponse = await getNearbyHospitalsApi(37.55561, 126.9234, 2000);
+            const hospitalResponse = await getAllHospitalsApi();
             const convertedHospitals: Hospital[] = hospitalResponse.data.map((hospital) => ({
               id: hospital.hospitalId,
               lat: hospital.latitude,
@@ -194,7 +194,7 @@ const Hospitalmap = () => {
               setCenter({ lat: 37.55561, lng: 126.9234 });
             }
           } catch (error) {
-            console.error('주변 병원 검색 실패:', error);
+            console.error('모든 병원 검색 실패:', error);
             setCenter({ lat: 37.55561, lng: 126.9234 });
           }
         }
@@ -204,9 +204,9 @@ const Hospitalmap = () => {
         setModalOpen(true);
         setShowMyLocationMarker(false);
 
-        // 기본 위치로 주변 병원 검색
+        // 모든 병원 조회
         try {
-          const hospitalResponse = await getNearbyHospitalsApi(37.55561, 126.9234, 2000);
+          const hospitalResponse = await getAllHospitalsApi();
           const convertedHospitals: Hospital[] = hospitalResponse.data.map((hospital) => ({
             id: hospital.hospitalId,
             lat: hospital.latitude,
@@ -230,7 +230,7 @@ const Hospitalmap = () => {
             setCenter({ lat: 37.55561, lng: 126.9234 });
           }
         } catch (hospitalError) {
-          console.error('주변 병원 검색 실패:', hospitalError);
+          console.error('모든 병원 조회 실패:', hospitalError);
           setCenter({ lat: 37.55561, lng: 126.9234 });
         }
       } finally {
@@ -444,10 +444,10 @@ const Hospitalmap = () => {
     setCenter(defaultLocation);
     localStorage.removeItem('userLocation');
 
-    // 기본 위치로 주변 병원 검색 API 호출
+    // 모든 병원 조회 API 호출
     try {
-      const hospitalResponse = await getNearbyHospitalsApi(defaultLocation.lat, defaultLocation.lng, 2000);
-      console.log('주변 병원 검색 성공:', hospitalResponse.data);
+      const hospitalResponse = await getAllHospitalsApi();
+      console.log('모든 병원 조회 성공:', hospitalResponse.data);
 
       // API 응답을 Hospital 타입으로 변환
       const convertedHospitals: Hospital[] = hospitalResponse.data.map((hospital) => ({
@@ -612,7 +612,7 @@ const Hospitalmap = () => {
           손빛이 닿는 병원을 찾아보세요
         </span>
       </div>
-      <div className="relative w-[360px] h-[510px]">
+      <div className="relative w-[360px] h-[480px]">
         <div id="map" className="w-full h-full" />
         <div className="flex flex-col gap-[10px] absolute z-1 top-0 right-0 p-[10px]">
           <button

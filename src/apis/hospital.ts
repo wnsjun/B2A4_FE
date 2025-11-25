@@ -58,3 +58,8 @@ export const getHospitalDetailApi = async (hospitalId: number) => {
   const response = await instance.get<HospitalDetailResponse>(`/api/hospitals/${hospitalId}`);
   return response.data;
 };
+
+export const getAllHospitalsApi = async () => {
+  const response = await instance.get<NearbyHospitalsResponse>('/api/hospitals/all');
+  return response.data;
+};

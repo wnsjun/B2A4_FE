@@ -133,8 +133,9 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, isOwnMessage, userRo
             lineHeight: messageStyle.lineHeight,
             letterSpacing: messageStyle.letterSpacing,
             width: 'fit-content',
-            maxWidth: userRole === 'patient' ? '80%' : '720px',
+            maxWidth: userRole === 'patient' ? 'none' : '720px',
             minHeight: messageStyle.minHeight,
+            whiteSpace: userRole === 'patient' ? 'nowrap' : 'normal',
           }}
         >
           {textLines.map((line, index) => (
