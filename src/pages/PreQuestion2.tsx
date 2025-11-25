@@ -43,7 +43,7 @@ const PreQuestion2 = () => {
           수어 이미지를 보고 골라주세요
         </p>
 
-        <div className="mt-[30px] flex flex-col items-center">
+        <div className="mt-[15px] flex flex-col items-center">
           {/* 캐러셀 컨테이너 */}
           <div className="flex items-center gap-8">
             {/* 이전 버튼 */}
@@ -78,7 +78,7 @@ const PreQuestion2 = () => {
           </div>
 
           {/* 페이지 표시기 */}
-          <div className="mt-8 flex gap-2 justify-center">
+          <div className="mt-4 flex gap-2 justify-center">
             {options.map((_, index) => (
               <div
                 key={index}
