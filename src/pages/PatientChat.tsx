@@ -89,7 +89,7 @@ const PatientChat = () => {
 
   // 메시지 스크롤 자동 이동
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   }, [messages]);
 
   // 진료 종료 후 WebSocket 연결 끊기 및 완료 페이지로 이동
