@@ -1,9 +1,8 @@
+import axios from "axios";
+import { postDoctorInfo } from "../../apis/DoctorAPI";
 import Modal from "../Modal";
 import SelectBox from "./SelectBox"
 import { useMemo, useRef, useState } from "react"
-import axios from "axios";
-const base_URL = import.meta.env.VITE_API_URL;
-const accessToken = "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxNiIsInVzZXJUeXBlIjoiaG9zcGl0YWwiLCJpYXQiOjE3NjM2NDUzNTYsImV4cCI6MTc2MzY1NjE1Nn0.0lwXKnv2VpT0kCCObtDVG7RZIxchMkh6hxpP38nMPGI";
 
 interface AddDoctorProps {
     onComplete: () => void;
@@ -20,25 +19,25 @@ const AddDoctor: React.FC<AddDoctorProps> = ({onComplete}) => {
 
     const fileInputRef = useRef<HTMLInputElement>(null);
 
-    const postDoctorInfo = async (data: FormData) => {
+    const handleDoctorInfo = async (data: FormData) => {
         for (const [key, value] of data.entries()) {
             console.log(key, value);
         };
 
         try {
-            const res = await axios.post(
-                `${base_URL}/api/hospitals/doctors`, data, {
-                    headers: {
-                        "Authorization": `Bearer ${accessToken}`,
-                        "Content-Type": 'multipart/form-data',
-                    }
-                }
-            )
-            console.log("의사 정보 등록 성공", res.data);
+            await postDoctorInfo(data);
+            console.log("의사 정보 등록 성공");
             setModal(true);
         } catch (error) {
-            console.error("의사 등록 실패 : ", error);
-            alert("의사 등록에 실패했습니다. 다시 시도해주세요.");
+            if (axios.isAxiosError(error) && error.response) {
+                const statusCode = error.response.status;
+                if (statusCode === 400) {
+                    alert("이미 등록된 의사 정보입니다.");
+                } else {
+                    alert("의사 등록에 실패했습니다. 다시 시도해주세요.");
+                }
+            }
+            
         }
     }
 
@@ -88,7 +87,8 @@ const AddDoctor: React.FC<AddDoctorProps> = ({onComplete}) => {
             ...errors,
             isValid: errors.minLength && errors.hasValidPw && pw.length > 0,
         }
-    }, [pw])
+    }, [pw]);
+    console.log(name, subject, pw);
 
     const handleSubmit = (e : React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
@@ -109,7 +109,7 @@ const AddDoctor: React.FC<AddDoctorProps> = ({onComplete}) => {
 
         formData.append('request', jsonData);
         
-        postDoctorInfo(formData);
+        handleDoctorInfo(formData);
     }
 
     const handleConfirm = () => {
@@ -166,7 +166,7 @@ const AddDoctor: React.FC<AddDoctorProps> = ({onComplete}) => {
                                     placeholder="이름을 입력하세요"
                                     value={name}
                                     onChange={handleNameChange}
-                                    className="w-48 h-12 border border-b-[#A9ACB2] border-t-0 border-x-0 pl-2 py-3 tracking-[-0.02em] placeholder:color-[#A9ACB2]"
+                                    className="w-48 h-12 border border-b-[#A9ACB2] border-t-0 border-x-0 pl-2 py-3 tracking-[-0.02em] placeholder:color-[#A9ACB2] focus:border-b-[#0C58FF] focus:outline-hidden"
                                 />
                             </div>
                             
@@ -186,15 +186,23 @@ const AddDoctor: React.FC<AddDoctorProps> = ({onComplete}) => {
 
                         <div className="w-full">
                             <p>의사 암호</p>
-                            <input 
-                                type="password" 
-                                placeholder="의사 암호를 입력하세요"
-                                value={pw}
-                                onChange={handlePwChange}
-                                required
-                                minLength={8}
-                                className="w-100 h-12 border border-b-[#A9ACB2] border-t-0 border-x-0 pl-2 py-3 tracking-[-0.02em] placeholder:color-[#A9ACB2]"
-                            />
+                            <div className="flex flex-row items-center justify-end">
+                                <input 
+                                    type="password" 
+                                    placeholder="의사 암호를 입력하세요"
+                                    value={pw}
+                                    onChange={handlePwChange}
+                                    required
+                                    minLength={8}
+                                    className={`w-100 h-12 border border-b-[#A9ACB2] border-t-0 border-x-0 pl-2 py-3 tracking-[-0.02em] placeholder:color-[#A9ACB2]
+                                        ${pw.length > 0 && !pwValidation.isValid ? 'focus:border-b-[#F8645D]' : 'focus:border-b-[#0C58FF]'} focus:outline-hidden`}
+                                />
+                                {pw.length > 0 && !pwValidation.isValid ? (
+                                    <img src="/error.svg" alt="error" className="absolute mr-2" />
+                                ) : (
+                                    <div></div>
+                                )}
+                            </div>
                             
                             <p className={`pl-2 mt-2 text-[12px] font-medium transition duration-150 ${
                                 pw.length > 0 && !pwValidation.isValid ? 'text-red-500' : 'text-[#A9ACB2]'

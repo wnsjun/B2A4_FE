@@ -27,6 +27,7 @@ import HospitalProfile from './pages/HospitalProfile.tsx';
 import HospitalProfileEdit from './pages/HospitalProfileEdit.tsx';
 import DoctorChat from './pages/DoctorChat.tsx';
 import DoctorWaiting from './pages/DoctorWaiting.tsx';
+import TreatmentDetail from './pages/TreatmentDetail.tsx';
 import DoctorChatList from './pages/DoctorChatList.tsx';
 import ConsultationCompleted from './pages/ConsultationCompleted.tsx';
 import PatientConsultationCompleted from './pages/PatientConsultationCompleted.tsx';
@@ -162,6 +163,7 @@ function App() {
               <Route path="/favorite-hospitals" element={<FavoriteHospitals />} />
               <Route path="/select-doctor" element={<SelectDoctor />} />
               <Route path='/camqr' element={<CamQR />} />
+              <Route path='/treatmentDetail/:chatRoomId' element={<TreatmentDetail />} />
               <Route path="/pre-question1" element={<PreQuestion1 />} />
               <Route path="/pre-question2" element={<PreQuestion2 />} />
               <Route path="/pre-question3" element={<PreQuestion3 />} />

@@ -38,6 +38,23 @@ export const postDocPincode = async (doctorId:number, pinCode: string) => {
     }
 }
 
+// 의사 추가
+export const postDoctorInfo = async (data: FormData) => {
+    try {
+        const res = await instance.post('/api/hospitals/doctors', data, {
+            headers: {
+                "Content-Type": undefined,
+            }
+        })
+        console.log("의사 정보 등록 성공", res.data);
+        return res.data;
+    } catch (error) {
+        console.error("의사 등록 실패 : ", error);
+        throw error;
+    }
+}
+    
+
 // QR 코드 조회
 export const fetchDoctorQR = async (doctorId: number) => {
     try {

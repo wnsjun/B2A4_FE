@@ -130,7 +130,7 @@ const DoctorList: React.FC<DoctorListProps> = ({onAddDoctor}) => {
                             placeholder="검색어를 입력하세요"
                             onChange={onChangeInput}
                             value={name}
-                            className="w-[360px] h-12 pl-2 border border-b-[#A9ACB2] border-x-0 border-t-0"
+                            className="w-[360px] h-12 pl-2 border border-b-[#A9ACB2] border-x-0 border-t-0 focus:border-b-[#0C58FF] focus:outline-hidden"
                         />
                         <img 
                             src={searchImg} 
@@ -153,7 +153,7 @@ const DoctorList: React.FC<DoctorListProps> = ({onAddDoctor}) => {
                         {searchDoctor.map((doctor) => {
                             const isCurrentDoctorSelected = doctor.doctorId === selectDocId;
                             return (
-                            <div key={doctor.doctorId} onClick={() => onClickList(doctor.doctorId)} className={`w-full h-[120px] p-4 hover:bg-[#F4F6F8] ${isCurrentDoctorSelected ? 'bg-[#F4F6F8]' : ''}`}>
+                            <div key={doctor.doctorId} onClick={() => onClickList(doctor.doctorId)} className={`w-full h-[120px] p-4 hover:bg-[#F4F6F8] cursor-pointer ${isCurrentDoctorSelected ? 'bg-[#F4F6F8]' : ''}`}>
                                 <div className="flex flex-row gap-[23px] items-center">
                                     <div className="w-22 h-22 rounded-full bg-[#F4F6F8] flex flex-col items-center content-center justify-center">
                                         {doctor.imageURL ? (
@@ -228,19 +228,22 @@ const DoctorList: React.FC<DoctorListProps> = ({onAddDoctor}) => {
                                         placeholder="의사 암호를 입력하세요"  
                                         onChange={onChangePw}
                                         value={pw}
-                                        className="h-12 pl-2 placeholder-[#A9ACB2] border border-b-[#A9ACB2] border-t-0 border-x-0"  
+                                        className="h-12 pl-2 placeholder-[#A9ACB2] border border-b-[#A9ACB2] border-t-0 border-x-0 focus:border-b-[#0C58FF] focus:outline-hidden"  
                                     />
                                     <p className="font-medium text-[12px] text-[#A9ACB2] pl-2">영문, 숫자 포함 8자 이상</p>
                             </div>
                             ) : (
                                 <div className="flex flex-col w-full justify-center gap-2">
-                                    <input 
-                                        type="text" 
-                                        placeholder="의사 암호를 입력하세요"  
-                                        onChange={onChangePw}
-                                        value={pw}
-                                        className="h-12 pl-2 placeholder-[#A9ACB2] border border-b-[#F8645D] border-t-0 border-x-0"  
-                                    />
+                                    <div className="flex flex-row w-full justify-end items-center">
+                                        <input 
+                                            type="text" 
+                                            placeholder="의사 암호를 입력하세요"  
+                                            onChange={onChangePw}
+                                            value={pw}
+                                            className="h-12 pl-2 w-full placeholder-[#A9ACB2] border border-b-[#F8645D] border-t-0 border-x-0"  
+                                        />
+                                        <img src="/error.svg" alt="error" className="absolute mr-2"/>
+                                    </div>
                                     <p className="font-medium text-[12px] text-[#F8645D] pl-2">암호가 잘못되었어요</p>
                             </div>
                             )}

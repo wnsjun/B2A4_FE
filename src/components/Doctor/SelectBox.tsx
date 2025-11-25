@@ -44,7 +44,7 @@ const SelectBox = ({label, options, selectedValue,
                     {options.map((option, i) => (
                         <div
                             key={i}
-                            className="pl-4 py-2 h-10 flex items-center"
+                            className="pl-4 py-2 h-10 flex items-center cursor-pointer"
                             onClick={() => handleOptionClick(option)}
                         >
                             {option}

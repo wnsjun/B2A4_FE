@@ -259,10 +259,7 @@ const MedicationForm = ({mode, initialData, recordId} : MedicationFormProps) => 
         <>
         <div className="flex flex-col min-h-screen items-center px-5">
             <div className="fixed items-center"> 
-                <Topbar title={formTitle}/> 
-                <div>
-                    <img src="/goback.svg" alt="prev" className="fixed top-3.5 cursor-pointer" onClick={() => nav(-1)}/>
-                </div>
+                <Topbar title={formTitle} type="header"/> 
             </div>
             
             <form className="flex flex-col w-full gap-8 mt-[70px]">
@@ -272,7 +269,7 @@ const MedicationForm = ({mode, initialData, recordId} : MedicationFormProps) => 
                     <input 
                         type="text" 
                         placeholder="약 이름을 입력하세요" 
-                        className="h-12 border border-b-[#A9ACB2] border-t-0 border-x-0 pl-2"
+                        className="h-12 border border-b-[#A9ACB2] border-t-0 border-x-0 pl-2 focus:border-b-[#0C58FF] focus:outline-hidden"
                         value={medName}
                         onChange={(e) => setMedName(e.target.value)}
                     />

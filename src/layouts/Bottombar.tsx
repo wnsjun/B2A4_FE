@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import HospitalSearchIcon from '../assets/bottombar/hospitalsearch.svg';
 import MedicalRecordsIcon from '../assets/bottombar/medicalrecords.svg';
@@ -9,9 +8,16 @@ import { bodySmallBold } from '../styles/typography';
 type NavigationTab = 'map' | 'qr' | 'record';
 
 export default function Bottombar() {
-  const [activeTab, setActiveTab] = useState<NavigationTab>('map');
   const navigate = useNavigate();
   const { pathname } = useLocation();
+
+  const getActiveTab = () : NavigationTab => {
+    if (pathname.includes('/hospitalmap')) return 'map';
+    if (pathname.includes('/qr-code')) return 'qr';
+    if (pathname.includes('/medical-records')) return 'record';
+    return 'map';
+  }
+  const activeTab = getActiveTab();
 
   // Bottombar를 표시할 경로들
   const showBottombarPaths = ['/qr-code', '/medical-records', '/hospitalmap'];
@@ -21,9 +27,9 @@ export default function Bottombar() {
     return null;
   }
 
-  const handleTabClick = (tab: NavigationTab) => {
-    setActiveTab(tab);
 
+  const handleTabClick = (tab: NavigationTab) => {
+    
     // 각 탭에 맞는 경로로 네비게이션
     switch (tab) {
       case 'map':

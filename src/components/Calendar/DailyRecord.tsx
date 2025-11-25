@@ -9,7 +9,7 @@ import { deleteMedAll, deleteMedSingle, updateMed } from "../../apis/CalendarAPi
 
 
 export interface MedicalTreatment {
-  chatRoodId: number;
+  chatRoomId: number;
   hospitalId: number;
   hospitalName: string;
   doctorId: number;
@@ -20,6 +20,7 @@ export interface MedicalTreatment {
   finishedAt: string;
   symptomSummary: string;
   diagnosisSummary: string;
+  doctorImageUrl: string;
 }
 
 export interface dailyRecord {
@@ -94,6 +95,7 @@ const DailyRecord = ({selectedMonth, selectedDay, isClicked, recordData, medTrea
     const [openSubModal, setSubModal] = useState(false);
     const [treatmentSummary, setTreatmentSummary] = useState("");
     const [startTime, setStartTime] = useState("");
+    const [chatRoomId, setChatRoomId] = useState(0);
 
     const [selectedMedicationId, setSelectedMedicationId] = useState<number | null>(null);
     const [modalCheckedStatus, setModalCheckedStatus] = useState<Record<number, boolean>>({});
@@ -194,11 +196,12 @@ const DailyRecord = ({selectedMonth, selectedDay, isClicked, recordData, medTrea
         if (medTreatData) {
             setTreatmentSummary(medTreatData.diagnosisSummary);
             const timeOnly = medTreatData.startedAt.split('T')[1].split('.')[0];
-            console.log(timeOnly);
+            //console.log(timeOnly);
             const h = timeOnly.split(':')[0];
             const m = timeOnly.split(':')[1];
             const time = h + ":" + m;
             setStartTime(time);
+            setChatRoomId(medTreatData.chatRoomId);
             recordExists = true;
         }
         setHasMedicalRecord(recordExists);
@@ -213,6 +216,9 @@ const DailyRecord = ({selectedMonth, selectedDay, isClicked, recordData, medTrea
         else setOpenDelModal(true);
     }
 
+    const handleDetial = (chatRoomId: number) => {
+        nav(`/treatmentDetail/${chatRoomId}`, {state: {medTreatData}});
+    }
 
     // 복약 체크 클릭 핸들러: 해당 스케줄 ID의 상태를 토글
     const onClickCheck = (scheduleId: number) => async () => {
@@ -236,7 +242,7 @@ const DailyRecord = ({selectedMonth, selectedDay, isClicked, recordData, medTrea
                 ...prevStatus,
                 [scheduleId] : newStatus
             }));
-            
+            onRefresh();
         } catch (error) {
             alert("복욕 상태 변경 실패");
         }
@@ -285,7 +291,10 @@ const DailyRecord = ({selectedMonth, selectedDay, isClicked, recordData, medTrea
                             </div>
 
                             <div className="my-4">
-                                <div className="flex flex-row gap-[9px] cursor-pointer text-[#0C58FF]">
+                                <div 
+                                    className="flex flex-row gap-[9px] cursor-pointer text-[#0C58FF]"
+                                    onClick={() => handleDetial(chatRoomId)}    
+                                >
                                     <div>상세보기</div>
                                     <img src={vectorImg} alt="more_info"  />
                                 </div> 
@@ -306,8 +315,8 @@ const DailyRecord = ({selectedMonth, selectedDay, isClicked, recordData, medTrea
                                         <div>
                                             {medication.name} 
                                         </div>
-                                        <div>
-                                            {medication.schedules.map((s: any) => mapPeriod(s.period)).join('. ')} 
+                                        <div className="font-medium text-[12px] text-[#666B76]">
+                                            {medication.schedules.map((s: any) => mapPeriod(s.period)).join('.')} 
                                         </div>
                                     </div>
 
