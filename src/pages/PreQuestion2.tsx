@@ -39,11 +39,11 @@ const PreQuestion2 = () => {
         <h1 className="text-center text-[32px] font-semibold leading-[150%] tracking-[-0.64px] text-[#1A1A1A]">
           언제부터 불편하셨나요?
         </h1>
-        <p className="mt-4 text-center text-[24px] font-semibold leading-[150%] tracking-[-0.48px] text-[#666B76]">
+        <p className="mt-2 text-center text-[24px] font-semibold leading-[150%] tracking-[-0.48px] text-[#666B76]">
           수어 이미지를 보고 골라주세요
         </p>
 
-        <div className="mt-[50px] flex flex-col items-center">
+        <div className="mt-[30px] flex flex-col items-center">
           {/* 캐러셀 컨테이너 */}
           <div className="flex items-center gap-8">
             {/* 이전 버튼 */}
