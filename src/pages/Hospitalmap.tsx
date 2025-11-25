@@ -71,6 +71,13 @@ const Hospitalmap = () => {
   const markersRef = useRef<any[]>([]);
   const watchPositionIdRef = useRef<number | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [initialZoomLevel] = useState(3);
+  const [firstHospitalLocation, setFirstHospitalLocation] = useState<LatLng | null>(null);
+
+  // 페이지 마운트 시 스크롤을 맨 위로 리셋
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
 
   // 지도 중심좌표 이동 감지 시 이동된 중심좌표로 설정
   const updateCenterWhenMapMoved = useMemo(
@@ -134,6 +141,9 @@ const Hospitalmap = () => {
                 }));
 
                 setHospitals(convertedHospitals);
+                if (convertedHospitals.length > 0) {
+                  setFirstHospitalLocation({ lat: convertedHospitals[0].lat, lng: convertedHospitals[0].lng });
+                }
               } catch (error) {
                 console.error('주변 병원 검색 실패:', error);
               }
@@ -177,9 +187,8 @@ const Hospitalmap = () => {
               phone: '',
             }));
             setHospitals(convertedHospitals);
-
-            // 첫 번째 병원을 중심으로 지도 표시
             if (convertedHospitals.length > 0) {
+              setFirstHospitalLocation({ lat: convertedHospitals[0].lat, lng: convertedHospitals[0].lng });
               setCenter({ lat: convertedHospitals[0].lat, lng: convertedHospitals[0].lng });
             } else {
               setCenter({ lat: 37.55561, lng: 126.9234 });
@@ -214,9 +223,8 @@ const Hospitalmap = () => {
             phone: '',
           }));
           setHospitals(convertedHospitals);
-
-          // 첫 번째 병원을 중심으로 지도 표시
           if (convertedHospitals.length > 0) {
+            setFirstHospitalLocation({ lat: convertedHospitals[0].lat, lng: convertedHospitals[0].lng });
             setCenter({ lat: convertedHospitals[0].lat, lng: convertedHospitals[0].lng });
           } else {
             setCenter({ lat: 37.55561, lng: 126.9234 });
@@ -342,11 +350,12 @@ const Hospitalmap = () => {
         // localStorage에 위치 정보 저장
         localStorage.setItem('userLocation', JSON.stringify(userLocation));
 
-        // 지도 포커싱
+        // 지도 포커싱 (현재 위치 + 초기 배율)
         if (mapRef.current) {
           mapRef.current.setCenter(
             new window.kakao.maps.LatLng(userLocation.lat, userLocation.lng)
           );
+          mapRef.current.setLevel(initialZoomLevel);
         }
 
         // 주변 병원 검색 API 호출
@@ -372,6 +381,9 @@ const Hospitalmap = () => {
           }));
 
           setHospitals(convertedHospitals);
+          if (convertedHospitals.length > 0) {
+            setFirstHospitalLocation({ lat: convertedHospitals[0].lat, lng: convertedHospitals[0].lng });
+          }
         } catch (error) {
           console.error('주변 병원 검색 실패:', error);
         }
@@ -395,11 +407,22 @@ const Hospitalmap = () => {
     watchPositionIdRef.current = watchId;
   };
 
-  // 내 위치로 지도 포커싱
+  // 지도 포커싱 (권한 상태에 따라 다르게 동작)
   const setCenterToMyPosition = () => {
-    if (mapRef.current) {
+    if (!mapRef.current) return;
+
+    if (showMyLocationMarker) {
+      // 권한 허용: 현재 위치로 포커싱
       mapRef.current.setCenter(new window.kakao.maps.LatLng(position.lat, position.lng));
+    } else {
+      // 권한 취소: 첫 번째 병원 위치로 포커싱
+      if (firstHospitalLocation) {
+        mapRef.current.setCenter(
+          new window.kakao.maps.LatLng(firstHospitalLocation.lat, firstHospitalLocation.lng)
+        );
+      }
     }
+    mapRef.current.setLevel(initialZoomLevel);
   };
 
   // 위치 권한 거부
@@ -446,14 +469,29 @@ const Hospitalmap = () => {
       setHospitals(convertedHospitals);
 
       // 첫 번째 병원을 중심으로 지도 표시
+      let targetLocation = defaultLocation;
       if (convertedHospitals.length > 0) {
-        setCenter({ lat: convertedHospitals[0].lat, lng: convertedHospitals[0].lng });
+        targetLocation = { lat: convertedHospitals[0].lat, lng: convertedHospitals[0].lng };
+        setFirstHospitalLocation(targetLocation);
+        setCenter(targetLocation);
       } else {
         setCenter(defaultLocation);
+      }
+
+      // 지도를 첫 번째 병원 위치로 포커싱 (초기 배율)
+      if (mapRef.current) {
+        mapRef.current.setCenter(new window.kakao.maps.LatLng(targetLocation.lat, targetLocation.lng));
+        mapRef.current.setLevel(initialZoomLevel);
       }
     } catch (error) {
       console.error('주변 병원 검색 실패:', error);
       setCenter(defaultLocation);
+
+      // 에러 발생 시에도 지도 포커싱
+      if (mapRef.current) {
+        mapRef.current.setCenter(new window.kakao.maps.LatLng(defaultLocation.lat, defaultLocation.lng));
+        mapRef.current.setLevel(initialZoomLevel);
+      }
     }
 
     // 마커 제거
