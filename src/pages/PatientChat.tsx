@@ -20,6 +20,7 @@ const PatientChat = () => {
     clearPreQuestionAnswers,
   } = useChatStore();
   const { accessToken } = useAuthStore();
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const isMessageSentRef = useRef(false);
   const wsInitializedRef = useRef(false);
@@ -89,7 +90,12 @@ const PatientChat = () => {
 
   // 메시지 스크롤 자동 이동
   useEffect(() => {
+    // 페이지 전체를 위로 스크롤
     window.scrollTo({ top: 0, behavior: 'smooth' });
+    // 메시지 영역 내에서 맨 아래로 스크롤
+    if (messagesContainerRef.current) {
+      messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight;
+    }
   }, [messages]);
 
   // 진료 종료 후 WebSocket 연결 끊기 및 완료 페이지로 이동
@@ -265,7 +271,7 @@ const PatientChat = () => {
       </div>
 
       {/* 메시지 영역 */}
-      <div className="flex-[0.7] overflow-y-auto px-5 py-3 space-y-3">
+      <div ref={messagesContainerRef} className="flex-[0.7] overflow-y-auto px-5 py-3 space-y-3">
         {messages.length === 0 && (
           <div className="flex items-center justify-center h-full">
             <div className="text-center text-[#7A8090]">
