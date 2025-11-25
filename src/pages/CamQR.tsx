@@ -37,6 +37,22 @@ const CamQR: React.FC = () => {
                     localStorage.setItem('userId', '1'); // 환자 ID는 실제 사용자 정보에서 가져오기
                     localStorage.setItem('accessToken', token);
 
+                    // doctorName 저장
+                    if (response?.data?.doctorName) {
+                        localStorage.setItem('doctorName', response.data.doctorName);
+                    }
+
+                    // startedAt을 포맷해서 appointmentTime으로 저장
+                    if (response?.data?.startedAt) {
+                        const date = new Date(response.data.startedAt);
+                        const month = date.getMonth() + 1;
+                        const day = date.getDate();
+                        const hours = String(date.getHours()).padStart(2, '0');
+                        const minutes = String(date.getMinutes()).padStart(2, '0');
+                        const appointmentTime = `${month}월 ${day}일 ${hours}:${minutes}`;
+                        localStorage.setItem('appointmentTime', appointmentTime);
+                    }
+
                     // 채팅 상태 저장 (WebSocket 구독은 PatientChat에서 처리)
                     setChatRoom(chatRoomId.toString(), 'patient', '1');
 

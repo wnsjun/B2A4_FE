@@ -3,7 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { useChatStore } from '../hooks/useChatStore';
 import { useAuthStore } from '../hooks/useAuthStore';
 import { wsService } from '../services/websocketService';
-import { closeChatRoom, sendVoiceMessage } from '../apis/chatApi';
+import { closeChatRoom, sendVoiceMessage, getChatMessages } from '../apis/chatApi';
 import ChatMessage from '../components/Chat/ChatMessage';
 import ChatInput from '../components/Chat/ChatInput';
 
@@ -18,10 +18,11 @@ const DoctorChat = () => {
     patientName: storePatientName,
     appointmentTime: storeAppointmentTime,
     setChatRoom,
+    setMessages,
   } = useChatStore();
   const { accessToken, doctorId: authDoctorId } = useAuthStore();
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const isInitializedRef = useRef(false);
+  const isFirstLoadRef = useRef(true);
 
   const [isRecording, setIsRecording] = useState(false);
   const [isSending, setIsSending] = useState(false);
@@ -30,7 +31,9 @@ const DoctorChat = () => {
 
   // localStorage에서 값 읽기
   const localDoctorId = localStorage.getItem('doctorId');
+  const localPatientName = localStorage.getItem('patientName');
   const userId = storeUserId || String(authDoctorId || localDoctorId || 'doctor');
+  const patientName = storePatientName || localPatientName || '환자';
 
   // URL 파라미터로 전달된 chatRoomId 또는 store의 chatRoomId 또는 localStorage 사용
   const chatRoomId = paramChatRoomId || storeChatRoomId;
@@ -52,9 +55,6 @@ const DoctorChat = () => {
 
   // WebSocket 초기화 및 채팅방 구독
   useEffect(() => {
-    if (isInitializedRef.current) return;
-    isInitializedRef.current = true;
-
     const initializeChat = async () => {
       try {
         // WebSocket 연결 (아직 연결되지 않았으면)
@@ -80,6 +80,42 @@ const DoctorChat = () => {
           if (!storeChatRoomId && accessToken) {
             setChatRoom(chatRoomId, 'doctor', userId);
           }
+
+          // 처음 마운트할 때만 메시지 조회
+          if (isFirstLoadRef.current) {
+            // localStorage에 저장된 메시지가 있으면 사용
+            const savedMessages = localStorage.getItem(`chat_${chatRoomId}`);
+            if (savedMessages) {
+              try {
+                const parsedMessages = JSON.parse(savedMessages);
+                setMessages(parsedMessages);
+                console.log('[DoctorChat] Messages restored from localStorage:', parsedMessages.length);
+              } catch (error) {
+                console.error('[DoctorChat] Failed to load messages from localStorage:', error);
+              }
+            } else {
+              // localStorage에 없으면 API에서 조회
+              try {
+                const response = await getChatMessages(chatRoomId);
+                if (response.success && response.data) {
+                  // API 응답을 ChatMessage 형식으로 변환
+                  const convertedMessages = response.data.map((msg) => ({
+                    id: String(msg.messageId),
+                    senderId: String(msg.senderId),
+                    type: 'text' as const,
+                    content: msg.content,
+                    timestamp: msg.createdAt,
+                  }));
+                  setMessages(convertedMessages);
+                  console.log('[DoctorChat] Messages loaded from API:', convertedMessages.length);
+                }
+              } catch (error) {
+                console.error('[DoctorChat] Failed to load messages from API:', error);
+                // API 실패해도 계속 진행 (WebSocket으로 새 메시지 받을 수 있음)
+              }
+            }
+            isFirstLoadRef.current = false;
+          }
         }
       } catch (error) {
         console.error('[DoctorChat] Failed to initialize chat:', error);
@@ -95,16 +131,19 @@ const DoctorChat = () => {
     return () => {
       // 언마운트 시 구독 해제는 하지 않음
     };
-  }, [chatRoomId, accessToken, navigate, userId, storeChatRoomId, setChatRoom]);
+  }, [chatRoomId, accessToken, navigate, userId, storeChatRoomId, setChatRoom, setMessages]);
 
   // 메시지 스크롤 자동 이동
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  // 진료 종료 후 3초 뒤 완료 페이지로 이동
+  // 진료 종료 후 WebSocket 연결 끊기 및 완료 페이지로 이동
   useEffect(() => {
     if (isChatClosed) {
+      // WebSocket 연결 종료
+      wsService.disconnect();
+
       const timer = setTimeout(() => {
         navigate('/doctor/consultation-completed');
       }, 3000);
@@ -209,7 +248,7 @@ const DoctorChat = () => {
               letterSpacing: '-0.64px',
             }}
           >
-            {storePatientName || '환자'}
+            {patientName} 환자
           </h1>
           <p className="text-[#B0B5BC] text-sm">
             {formatAppointmentTime(storeAppointmentTime)}
@@ -245,7 +284,7 @@ const DoctorChat = () => {
       </div>
 
       {/* 메시지 영역 */}
-      <div className="flex-1 overflow-hidden p-4 space-y-4 pb-20">
+      <div className="flex-1 overflow-y-auto p-4 space-y-4 pb-20">
         {messages.length === 0 && (
           <div className="flex items-center justify-center h-full">
             <div className="text-center text-[#7A8090]">
@@ -259,6 +298,7 @@ const DoctorChat = () => {
             key={message.id}
             message={message}
             isOwnMessage={message.senderId === userId}
+            userRole="doctor"
           />
         ))}
 

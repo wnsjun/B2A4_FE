@@ -33,7 +33,7 @@ const PatientConsultationCompleted = () => {
             marginBottom: '16px',
           }}
         >
-          이어진 진료가 끝났어요
+          손빛으로 이어진 진료가 끝났어요
         </h1>
 
         {/* 서브 텍스트 */}

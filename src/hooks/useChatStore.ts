@@ -120,12 +120,24 @@ export const useChatStore = create<ChatState>((set) => ({
     }),
 
   addMessage: (message) =>
-    set((state) => ({
-      messages: [...state.messages, message],
-    })),
+    set((state) => {
+      const updatedMessages = [...state.messages, message];
+      // localStorage에 메시지 저장
+      if (state.chatRoomId) {
+        localStorage.setItem(`chat_${state.chatRoomId}`, JSON.stringify(updatedMessages));
+      }
+      return { messages: updatedMessages };
+    }),
 
-  setMessages: (messages) =>
-    set({ messages }),
+  setMessages: (messages) => {
+    set((state) => {
+      // localStorage에 메시지 저장
+      if (state.chatRoomId) {
+        localStorage.setItem(`chat_${state.chatRoomId}`, JSON.stringify(messages));
+      }
+      return { messages };
+    });
+  },
 
   clearMessages: () =>
     set({ messages: [] }),

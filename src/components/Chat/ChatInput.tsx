@@ -45,7 +45,7 @@ const ChatInput: React.FC<ChatInputProps> = ({ chatRoomId, isEnabled, userRole =
   }
 
   return (
-    <div className={`bg-[#3A3F47] flex-shrink-0 flex items-center gap-3 px-4 py-3 ${containerHeight} ${isPatient ? 'flex-wrap' : ''}`}>
+    <div className={`bg-[#3A3F47] flex-shrink-0 flex items-center gap-3 py-3 ${containerHeight} ${isPatient ? 'flex-wrap' : ''}`}>
       {/* 텍스트 입력 */}
       <input
         type="text"
