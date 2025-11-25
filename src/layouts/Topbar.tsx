@@ -3,6 +3,7 @@ import TypoLogo from '../components/TypoLogo';
 import { topHeader } from '../styles/typography';
 import { useNavigate } from 'react-router-dom';
 import StarOffIcon from '../assets/hospitalmap/star-off.svg';
+import SettingIcon from '../assets/topbar/setting.svg';
 
 interface TopbarProps {
   title?: string;
@@ -107,7 +108,7 @@ const Topbar: React.FC<TopbarProps> = ({
             cursor: 'pointer', // 클릭 가능하도록 커서 추가
           }}
         >
-          <img src="../src/assets/topbar/setting.svg" onClick={() => nav('/setting')} />
+          <img src={SettingIcon} onClick={() => nav('/setting')} />
         </div>
       )}
     </div>

@@ -6,6 +6,7 @@ import FormInput from '../components/FormInput';
 import { useIsMobile } from '../hooks/useIsMobile';
 import { loginHospitalApi, loginPatientApi } from '../apis/auth';
 import { useAuthStore } from '../hooks/useAuthStore';
+import typologo from '../assets/typologo.svg';
 
 type LoginFormInputs = {
   id: string;
@@ -80,7 +81,7 @@ const LogIn = () => {
     >
       {isMobile ? (
         <div className="mb-[60px] mt-[160px]">
-          <img src="../src/assets/typologo.svg" className="w-[88px]" />
+          <img src={typologo} className="w-[88px]" />
         </div>
       ) : (
         <div className="flex flex-col items-center">
@@ -88,7 +89,7 @@ const LogIn = () => {
             <img src="/sonbit.svg" className="w-[100px]" />
           </div>
           <div className="mb-[60px] mt-[16px]">
-            <img src="../src/assets/typologo.svg" className="w-[72px]" />
+            <img src={typologo} className="w-[72px]" />
           </div>
         </div>
       )}

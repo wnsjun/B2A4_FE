@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useState } from 'react';
+import TypoLogo from '../assets/typologo.svg';
 
 const SplashPageWeb = () => {
   const navigate = useNavigate();
@@ -27,7 +28,7 @@ const SplashPageWeb = () => {
                   ${isFadingOut ? 'opacity-0' : 'opacity-100'}`}
     >
       <img src={'/sonbit.svg'} alt="손빛 로고" className="splash-logo" />
-      <img src="./src/assets/typologo.svg" className="w-[64px] mt-[13px]" />
+      <img src={TypoLogo} className="w-[64px] mt-[13px]" />
     </div>
   );
 };

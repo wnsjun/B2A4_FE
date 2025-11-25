@@ -6,6 +6,9 @@ import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { getHospitalInfoApi } from '../apis/auth';
 import { processOperatingTimeForDisplay } from '../utils/timeConvertor';
+import LocaionIcon from '../assets/profile/location.svg';
+import CallIcon from '../assets/profile/call.svg';
+import TimeIcon from '../assets/profile/time.svg';
 
 interface HospitalData {
   name: string;
@@ -117,12 +120,12 @@ const HospitalProfile = () => {
             style={hospitalProfileText}
           >
             <div id="위치" className="flex flex-row gap-[8px]">
-              <img src="../src/assets/profile/location.svg" className="w-[20px] h-[20px]" />
+              <img src={LocaionIcon} className="w-[20px] h-[20px]" />
               {hospitalData.address}
             </div>
             <div id="운영일" className="flex flex-row gap-[8px] ">
               <div>
-                <img src="../src/assets/profile/time.svg" className="w-[20px] h-[20px]" />
+                <img src={TimeIcon} className="w-[20px] h-[20px]" />
               </div>
               <div className="flex w-full max-h-[145px] overflow-y-auto ">
                 {isTimeOpen ? (
@@ -173,7 +176,7 @@ const HospitalProfile = () => {
               </div>
             </div>
             <div id="연락처" className="flex flex-row gap-[8px]">
-              <img src="../src/assets/profile/call.svg" className="w-[20px] h-[20px]" />
+              <img src={CallIcon} className="w-[20px] h-[20px]" />
               {hospitalData.contact}
             </div>
           </div>
