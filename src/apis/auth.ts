@@ -82,3 +82,20 @@ export const updateHospitalInfoApi = async (formData: FormData) => {
   });
   return response.data;
 };
+
+interface LocationPermissionResponse {
+  isSuccess: boolean;
+  message: string;
+  locationPermission: boolean;
+}
+
+// ⭐️ 개선된 getLocationPermissionApi
+export const getLocationPermissionApi = async (): Promise<boolean> => {
+  const response = await instance.get<LocationPermissionResponse>('/api/patients/locations');
+  return response.data.locationPermission;
+};
+
+export const updateLocationPermissionApi = async (status: boolean): Promise<void> => {
+  const payload = { locationPermission: status };
+  await instance.post('/api/patients/locations', payload);
+};

@@ -1,22 +1,48 @@
 import Topbar from '../layouts/Topbar';
 import { topHeader } from '../styles/typography';
 import ToggleSwitch from '../components/ToggleSwitch';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Modal from '../components/Modal';
 import { logoutPatientApi } from '../apis/auth';
 import { useAuthStore } from '../hooks/useAuthStore';
+import { getLocationPermissionApi, updateLocationPermissionApi } from '../apis/auth';
 
 const Setting = () => {
   const nav = useNavigate();
   const [isOn, setIsOn] = useState(true);
   const [isLogOut, setIsLogOut] = useState(false);
+  const [isChanging, setIsChanging] = useState(false);
   const { clearAuth } = useAuthStore();
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setIsOn(e.target.checked);
-  };
+  useEffect(() => {
+    const fetchPermission = async () => {
+      try {
+        const status = await getLocationPermissionApi();
+        setIsOn(status);
+      } catch (error) {
+        console.error('위치 권한 상태 불러오기 실패:', error);
+      }
+    };
+    fetchPermission();
+  }, []);
 
+  const handleChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newStatus = e.target.checked;
+    if (isChanging) return;
+
+    setIsChanging(true);
+    try {
+      await updateLocationPermissionApi(newStatus);
+      setIsOn(newStatus);
+      alert(`위치 정보 권한이 ${newStatus ? '활성화' : '비활성화'}되었습니다.`);
+    } catch (error) {
+      console.error('위치 권한 변경 실패:', error);
+      alert('위치 권한 변경 요청 중 에러가 발생했습니다. 콘솔을 확인하세요.');
+    } finally {
+      setIsChanging(false); // 로딩 종료
+    }
+  };
   const handleClickLogOut = () => {
     setIsLogOut(true);
   };
