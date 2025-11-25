@@ -1,5 +1,5 @@
 import './App.css';
-import { Route, Routes, useNavigate } from 'react-router-dom';
+import { Route, Routes, useNavigate, useLocation } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { useAuthStore } from './hooks/useAuthStore';
 import { useChatStore } from './hooks/useChatStore';
@@ -33,9 +33,15 @@ import PatientConsultationCompleted from './pages/PatientConsultationCompleted.t
 
 function App() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { accessToken, doctorId, setDoctorId, setTokens } = useAuthStore();
   const { setChatRoom, setChatRoomInfo } = useChatStore();
   const [, setNotificationCount] = useState(0);
+
+  // 경로 변경 시 스크롤을 맨 위로 초기화
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [location]);
 
   // 앱 시작 시 localStorage에서 accessToken 로드 (처음 마운트할 때만)
   useEffect(() => {
