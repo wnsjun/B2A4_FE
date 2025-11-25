@@ -39,10 +39,14 @@ const QrCheckIn = () => {
         setIsLoading(true);
 
         // location.state에서 doctorId를 가져오고, 없으면 localStorage 또는 useAuthStore에서 가져옴
-        let doctorId = state?.DoctorData?.doctorId;
+        let doctorId: number | null = state?.DoctorData?.doctorId ?? null;
         if (!doctorId) {
           const localDoctorId = localStorage.getItem('doctorId');
-          doctorId = localDoctorId ? parseInt(localDoctorId) : (authDoctorId ? parseInt(authDoctorId) : null);
+          if (localDoctorId) {
+            doctorId = parseInt(localDoctorId);
+          } else if (authDoctorId) {
+            doctorId = parseInt(authDoctorId);
+          }
         }
 
         if (!doctorId) {
