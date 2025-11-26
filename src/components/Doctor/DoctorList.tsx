@@ -159,7 +159,7 @@ const DoctorList: React.FC<DoctorListProps> = ({onAddDoctor}) => {
                                         {doctor.imageUrl ? (
                                             <img src={doctor.imageUrl} alt={`${doctor.name} 프로필`} className="object-cover w-full h-full rounded-full" />
                                         ) : (
-                                            <img src="/camera.svg" alt="카메라 아이콘" className="w-6" />
+                                            <img src="/doctor.svg" alt="기본 프로필"  />
                                         )}
                                     </div>
 
@@ -204,7 +204,7 @@ const DoctorList: React.FC<DoctorListProps> = ({onAddDoctor}) => {
                                     {selectedDoctor.imageUrl ? (
                                         <img src={selectedDoctor.imageUrl} alt="프로필"  className="object-cover w-full h-full rounded-full"/>
                                     ) : (
-                                        <img src="/camera.svg" alt="카메라 아이콘" className="w-6" />
+                                        <img src="/doctor.svg" alt="기본 프로필" />
                                     )}
                                     
                                 </div>

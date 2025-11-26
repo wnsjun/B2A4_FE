@@ -140,7 +140,7 @@ const TreatmentDetail = () => {
                             {parsedData?.doctorImageUrl ? (
                                 <img src={parsedData?.doctorImageUrl} alt="profile" className="w-12 h-12 rounded-full object-cover"/>
                             ) : (
-                                <img src="/camera.svg" alt="no profile" />
+                                <img src="/doctor.svg" alt="no profile" />
                             )}
                             
                         </div>
