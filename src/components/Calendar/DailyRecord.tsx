@@ -337,6 +337,14 @@ const DailyRecord = ({selectedMonth, selectedDay, isClicked, recordData, medTrea
                                     </div>
                                 </div>
                             ))}
+                            <div className="w-full flex justify-center items-center mt-5 mb-10">
+                                <button 
+                                    className="font-semibold text-[12px] text-[#666B76] cursor-pointer"
+                                    onClick={() => nav("/add-schedule")}    
+                                >
+                                    복약 일정 추가 +
+                                </button>
+                            </div>
                             </>
                         ) : (
                             <div className="w-full flex justify-center items-center my-[30px]">
