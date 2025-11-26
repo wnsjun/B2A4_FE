@@ -10,7 +10,7 @@ export interface Doctor {
     doctorId: number;
     name: string;
     specialty: string;
-    imageURL: string | null;
+    imageUrl: string | null;
     lastTreatment: string | null;
 }
 
@@ -156,8 +156,8 @@ const DoctorList: React.FC<DoctorListProps> = ({onAddDoctor}) => {
                             <div key={doctor.doctorId} onClick={() => onClickList(doctor.doctorId)} className={`w-full h-[120px] p-4 hover:bg-[#F4F6F8] cursor-pointer ${isCurrentDoctorSelected ? 'bg-[#F4F6F8]' : ''}`}>
                                 <div className="flex flex-row gap-[23px] items-center">
                                     <div className="w-22 h-22 rounded-full bg-[#F4F6F8] flex flex-col items-center content-center justify-center">
-                                        {doctor.imageURL ? (
-                                            <img src={doctor.imageURL} alt={`${doctor.name} 프로필`} className="object-cover w-full h-full rounded-full" />
+                                        {doctor.imageUrl ? (
+                                            <img src={doctor.imageUrl} alt={`${doctor.name} 프로필`} className="object-cover w-full h-full rounded-full" />
                                         ) : (
                                             <img src="/camera.svg" alt="카메라 아이콘" className="w-6" />
                                         )}
@@ -201,8 +201,8 @@ const DoctorList: React.FC<DoctorListProps> = ({onAddDoctor}) => {
                         <div className="w-[344px] flex flex-col gap-4">
                             <div className="h-22 flex flex-row gap-4 items-center">
                                 <div className="w-22 h-22 rounded-full bg-[#F4F6F8] flex flex-col items-center content-center justify-center">
-                                    {selectedDoctor.imageURL ? (
-                                        <img src={selectedDoctor.imageURL} alt="프로필"  className="object-cover w-full h-full rounded-full"/>
+                                    {selectedDoctor.imageUrl ? (
+                                        <img src={selectedDoctor.imageUrl} alt="프로필"  className="object-cover w-full h-full rounded-full"/>
                                     ) : (
                                         <img src="/camera.svg" alt="카메라 아이콘" className="w-6" />
                                     )}
