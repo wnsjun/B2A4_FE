@@ -83,8 +83,6 @@ const HospitalProfileEdit = () => {
       } catch (error) {
         console.error('정보 불러오기 실패:', error);
         alert('정보를 불러오지 못했습니다.');
-      } finally {
-        alert('병원 정보를 불러오지 못했습니다. 콘솔을 확인해주세요.');
       }
     };
 

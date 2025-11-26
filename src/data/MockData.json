@@ -1,12 +1,1 @@
-{
-  "hospital1": [
-    {
-      "image": "./data/hospital.jpg",
-      "name": "다나아병원",
-      "subject": "정형외과",
-      "address": "서울특별시 마포구 양화로 188 (동교동)",
-      "operatingTime": "mon: 10:00-13:00",
-      "contact": "02-789-9800"
-    }
-  ]
-}
+

@@ -89,7 +89,6 @@ interface LocationPermissionResponse {
   locationPermission: boolean;
 }
 
-// ⭐️ 개선된 getLocationPermissionApi
 export const getLocationPermissionApi = async (): Promise<boolean> => {
   const response = await instance.get<LocationPermissionResponse>('/api/patients/locations');
   return response.data.locationPermission;

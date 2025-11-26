@@ -101,8 +101,17 @@ export const reverseTransformOperatingData = (serverData: any[], serverBreak: an
   };
 
   // 배열이 아니거나 없으면 빈 객체 반환
-  if (!serverData || !Array.isArray(serverData)) return result;
-
+  if (!serverData || !Array.isArray(serverData)) {
+    return {
+      mon: '',
+      tue: '',
+      wed: '',
+      thu: '',
+      fri: '',
+      sat: '',
+      sun: '',
+    };
+  }
   serverData.forEach((info) => {
     const lowerKey = dayMapToLow[info.dayOfWeek];
     if (!lowerKey) return;
@@ -114,7 +123,9 @@ export const reverseTransformOperatingData = (serverData: any[], serverBreak: an
     }
 
     // 시간 문자열 생성 (예: "09:00 ~ 18:00")
-    let timeString = `${info.openTime} ~ ${info.closeTime}`;
+    const open = info.openTime || '';
+    const close = info.closeTime || '';
+    let timeString = `${open} ~ ${close}`; // ⬅️ null 대신 빈 문자열 사
 
     // 휴게 시간 확인 (배열 안에 같이 들어있는 경우)
     if (info.breakStartTime && info.breakEndTime) {
@@ -176,13 +187,17 @@ export const processOperatingTimeForDisplay = (
     const isClosed = dayInfo.isClosed;
 
     // 1. 진료 시간 문자열 생성 (초 제거)
-    const hours = isClosed ? '휴무' : `${formatTime(dayInfo.openTime)} - ${formatTime(dayInfo.closeTime)}`;
+    const hours = isClosed
+      ? '휴무'
+      : `${formatTime(dayInfo.openTime)} - ${formatTime(dayInfo.closeTime)}`;
 
     let breakStr: string | null = null;
 
     if (!isClosed && dayInfo.breakStartTime && dayInfo.breakEndTime) {
       // 예: "12:00 - 13:00 휴게시간"
-      breakStr = `${formatTime(dayInfo.breakStartTime)} - ${formatTime(dayInfo.breakEndTime)} 휴게시간`;
+      breakStr = `${formatTime(dayInfo.breakStartTime)} - ${formatTime(
+        dayInfo.breakEndTime
+      )} 휴게시간`;
     }
 
     return {
