@@ -249,6 +249,9 @@ const Calendar = () => {
         </div>
       )}
       <div className="flex flex-col mx-5 gap-2">
+        <div className="text-lg font-semibold text-center">
+          {calendarDate.getMonth() + 1}월
+        </div>
         <CalendarDays />
         <CalendarCells
           currentDate={calendarDate}

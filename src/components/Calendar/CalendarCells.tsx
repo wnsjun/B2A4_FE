@@ -73,7 +73,7 @@ const CalendarCells = ({currentDate, selectedMonth, selectedDay, onDateClick, mo
             days.push(
                 <div 
                     key={num} 
-                    className={`w-full h-[52px] text-center rounded-sm
+                    className={`w-full h-[46px] text-center rounded-sm
                         ${isOtherMonth ? "opacity-0" : `${textColor} cursor-pointer`}
                         ${isSelected ? "bg-[#F4F6F8]" : ""}
                     `}
