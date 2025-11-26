@@ -98,6 +98,7 @@ const Calendar = () => {
       setDailyRecordData(filteredRecords);
       setDailyRecordTaken(dailyTaken.data || []);
       setDailyTreatmentData(treatment.data);
+      
     } catch (error) {
       console.error('복약 일정 데이터 로드 중 오류: ', error);
       setDailyRecordData(null);

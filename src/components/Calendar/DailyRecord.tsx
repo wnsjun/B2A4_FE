@@ -194,7 +194,7 @@ const DailyRecord = ({selectedMonth, selectedDay, isClicked, recordData, medTrea
         let recordExists = false;
 
         if (medTreatData) {
-            setTreatmentSummary(medTreatData.diagnosisSummary);
+            setTreatmentSummary(medTreatData.symptomSummary);
             const timeOnly = medTreatData.startedAt.split('T')[1].split('.')[0];
             //console.log(timeOnly);
             const h = timeOnly.split(':')[0];
@@ -282,7 +282,7 @@ const DailyRecord = ({selectedMonth, selectedDay, isClicked, recordData, medTrea
                         {hasMedicalRecord ? (
                             <>
                             <div className="flex flex-col my-4 gap-1">
-                                <div>
+                                <div className="w-[220px] h-[50px] overflow-y-scroll wrap-break-word">
                                     {treatmentSummary || "진료 요약 없음"}
                                 </div>
                                 <div className="text-[#666B76] text-[12px]">

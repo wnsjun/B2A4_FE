@@ -125,15 +125,15 @@ const TreatmentDetail = () => {
                             <p className="font-semibold text-[16px]">{parsedData?.date}</p>
                             <p className="font-medium text-[12px]">{parsedData?.time}</p>
                         </div>
-                        <div className="text-#1A1A1A]">
+                        <div className="text-[#1A1A1A] w-50">
                             {parsedData?.symptom || "증상 없음"}
                         </div>
                     </div>
 
-                    <div className="flex flex-row gap-2">
+                    <div className="flex flex-row gap-2 items-center">
                         <div className="flex flex-col items-end gap-1 justify-center">
-                            <p className="text-[#666B76]">{parsedData?.hospital}</p>
-                            <p className="text-[#1A1A1A] font-medium text-[14px]">{parsedData?.doctor}</p>
+                            <p className="text-[#666B76] font-medium text-[12px]">{parsedData?.hospital}</p>
+                            <p className="text-[#1A1A1A] text-[14px]">{parsedData?.doctor}</p>
                         </div>
 
                         <div className="w-12 h-12 rounded-full items-center flex justify-center bg-[#F4F6F8]">
@@ -155,7 +155,7 @@ const TreatmentDetail = () => {
                         <img src={aiImg} alt="ai summary" className="w-4 h-4"/>
                         <p className="text-[#666B76] font-semibold text-[14px]">AI 요약</p>
                     </div>
-                    <div className="font-semibold text-[14px]">
+                    <div className="font-semibold text-[14px] h-10 overflow-y-scroll">
                         {treatmentSummary ? (
                             <p>{treatmentSummary}</p>
                         ) : (
@@ -165,7 +165,7 @@ const TreatmentDetail = () => {
 
                 </div>
 
-                <div className="flex-1 overflow-y-auto mt-[110px]"> 
+                <div className="flex-1 overflow-y-auto mt-[130px]"> 
                     <div className="flex flex-col gap-4"> 
                         {messages.length > 0 ? (
                             messages.map((message) => (
