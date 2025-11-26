@@ -2,6 +2,7 @@ import React, { useRef, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import QrScanner from 'qr-scanner';
 import { useChatStore } from '../hooks/useChatStore';
+import { useAuthStore } from '../hooks/useAuthStore';
 import { scanQRAndCreateChat } from '../apis/chatApi';
 import WaitTreat from '../components/WaitTreat';
 
@@ -10,6 +11,7 @@ const CamQR: React.FC = () => {
     const videoRef = useRef<HTMLVideoElement>(null);
     const qrScannerRef = useRef<QrScanner | null>(null);
     const { setChatRoom } = useChatStore();
+    const { patientId } = useAuthStore();
 
     const [scanResult, setScanResult] = useState<string | null>(null);
     const [isScanning, setIsScanning] = useState(false);
@@ -34,7 +36,8 @@ const CamQR: React.FC = () => {
                 if (chatRoomId && token) {
                     // localStorage에 저장
                     localStorage.setItem('chatRoomId', chatRoomId.toString());
-                    localStorage.setItem('userId', '1'); // 환자 ID는 실제 사용자 정보에서 가져오기
+                    const userId = patientId || '1';
+                    localStorage.setItem('userId', userId);
                     localStorage.setItem('accessToken', token);
 
                     // doctorName 저장
@@ -54,7 +57,7 @@ const CamQR: React.FC = () => {
                     }
 
                     // 채팅 상태 저장 (WebSocket 구독은 PatientChat에서 처리)
-                    setChatRoom(chatRoomId.toString(), 'patient', '1');
+                    setChatRoom(chatRoomId.toString(), 'patient', userId);
 
                     console.log('[CamQR] 채팅방 생성 완료:', chatRoomId);
 

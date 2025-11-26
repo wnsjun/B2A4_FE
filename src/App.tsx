@@ -38,6 +38,7 @@ function App() {
   const { accessToken, doctorId, setDoctorId, setTokens } = useAuthStore();
   const { setChatRoom, setChatRoomInfo } = useChatStore();
   const [, setNotificationCount] = useState(0);
+  const [previousDoctorId, setPreviousDoctorId] = useState<string | null>(null);
 
   // 경로 변경 시 스크롤을 맨 위로 초기화
   useEffect(() => {
@@ -66,9 +67,26 @@ function App() {
     const initializeDoctorWebSocket = async () => {
       if (!doctorId || !accessToken) return;
 
+      // doctorId가 변경되면 이전 구독을 해제하고 새로 구독
+      if (previousDoctorId && previousDoctorId !== doctorId) {
+        console.log(`[App] DoctorId changed from ${previousDoctorId} to ${doctorId}. Updating subscriptions...`);
+        wsService.unsubscribe(`/sub/doctors/${previousDoctorId}`);
+      }
+
       try {
         // 이미 연결되어 있으면 스킵
         if (wsService.isConnected()) {
+          // 연결되어 있으면 새로운 doctorId로 구독만 업데이트
+          if (previousDoctorId && previousDoctorId !== doctorId) {
+            console.log(`[App] Updating subscription to /sub/doctors/${doctorId}`);
+            wsService.subscribe(
+              `/sub/doctors/${doctorId}`,
+              (message: { body: string }) => {
+                handleDoctorMessage(message, doctorId);
+              }
+            );
+            setPreviousDoctorId(doctorId);
+          }
           return;
         }
 
@@ -90,42 +108,11 @@ function App() {
         wsService.subscribe(
           `/sub/doctors/${doctorId}`,
           (message: { body: string }) => {
-            console.log('[App] 새로운 채팅방 알림:', message.body);
-            try {
-              const newRoom = JSON.parse(message.body);
-              const chatRoomId = newRoom.chatRoomId || newRoom.id;
-              if (chatRoomId) {
-                // 알림 카운트 증가
-                setNotificationCount((prev) => prev + 1);
-
-                // 채팅 상태 저장
-                setChatRoom(chatRoomId.toString(), 'doctor', String(doctorId));
-
-                // 환자 정보 저장
-                if (newRoom.patientName || newRoom.startedAt) {
-                  setChatRoomInfo(newRoom.patientName, newRoom.doctorName, newRoom.startedAt);
-                  // localStorage에도 저장 (새로고침 후 데이터 복구용)
-                  localStorage.setItem('patientName', newRoom.patientName || '환자');
-                }
-
-                // 자동으로 채팅 페이지로 이동
-                console.log('[App] 채팅 페이지로 이동:', `/doctor/chat/${chatRoomId}`);
-                navigate(`/doctor/chat/${chatRoomId}`);
-
-                // 브라우저 알림
-                if ('Notification' in window && Notification.permission === 'granted') {
-                  new Notification('새로운 환자', {
-                    body: `${newRoom.patientName || '환자'}가 진료를 요청했습니다.`,
-                    tag: `chat-${chatRoomId}`,
-                  });
-                }
-              }
-            } catch (error) {
-              console.error('[App] 알림 파싱 실패:', error);
-            }
+            handleDoctorMessage(message, doctorId);
           }
         );
 
+        setPreviousDoctorId(doctorId);
         console.log('[App] 의사 WebSocket 초기화 완료');
       } catch (error) {
         console.error('[App] 의사 WebSocket 초기화 실패:', error);
@@ -134,6 +121,42 @@ function App() {
 
     initializeDoctorWebSocket();
   }, [doctorId, accessToken]);
+
+  const handleDoctorMessage = (message: { body: string }, currentDoctorId: string) => {
+    console.log('[App] 새로운 채팅방 알림:', message.body);
+    try {
+      const newRoom = JSON.parse(message.body);
+      const chatRoomId = newRoom.chatRoomId || newRoom.id;
+      if (chatRoomId) {
+        // 알림 카운트 증가
+        setNotificationCount((prev) => prev + 1);
+
+        // 채팅 상태 저장
+        setChatRoom(chatRoomId.toString(), 'doctor', String(currentDoctorId));
+
+        // 환자 정보 저장
+        if (newRoom.patientName || newRoom.startedAt) {
+          setChatRoomInfo(newRoom.patientName, newRoom.doctorName, newRoom.startedAt);
+          // localStorage에도 저장 (새로고침 후 데이터 복구용)
+          localStorage.setItem('patientName', newRoom.patientName || '환자');
+        }
+
+        // 자동으로 채팅 페이지로 이동
+        console.log('[App] 채팅 페이지로 이동:', `/doctor/chat/${chatRoomId}`);
+        navigate(`/doctor/chat/${chatRoomId}`);
+
+        // 브라우저 알림
+        if ('Notification' in window && Notification.permission === 'granted') {
+          new Notification('새로운 환자', {
+            body: `${newRoom.patientName || '환자'}가 진료를 요청했습니다.`,
+            tag: `chat-${chatRoomId}`,
+          });
+        }
+      }
+    } catch (error) {
+      console.error('[App] 알림 파싱 실패:', error);
+    }
+  };
 
   return (
     <Routes>

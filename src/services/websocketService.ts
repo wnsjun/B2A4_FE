@@ -180,19 +180,41 @@ class WebSocketService {
    */
   private resubscribeAll(): void {
     console.log('[WebSocket] Resubscribing to all topics...');
-    this.subscriptionCallbacks.forEach((callback, topic) => {
-      const subscription = this.stompClient?.subscribe(
-        topic,
-        (message: StompMessage) => {
-          console.log(`[WebSocket] Message received from ${topic}:`, message);
-          callback(message);
-        }
-      );
 
-      if (subscription) {
-        this.subscriptions.set(topic, subscription);
-        console.log(`[WebSocket] Resubscribed to ${topic}`);
-      }
+    // 이미 구독된 것들을 다시 구독하되, 약간의 딜레이를 두어 CONNECTING 상태 회피
+    let delayMs = 100;
+    this.subscriptionCallbacks.forEach((callback, topic) => {
+      setTimeout(() => {
+        // 이미 구독되어 있으면 skip
+        if (this.subscriptions.has(topic)) {
+          console.log(`[WebSocket] Already subscribed to ${topic}, skipping resubscribe`);
+          return;
+        }
+
+        if (!this.stompClient || !this.stompClient.connected) {
+          console.warn(`[WebSocket] Client not connected, cannot resubscribe to ${topic}`);
+          return;
+        }
+
+        try {
+          const subscription = this.stompClient.subscribe(
+            topic,
+            (message: StompMessage) => {
+              console.log(`[WebSocket] Message received from ${topic}:`, message);
+              callback(message);
+            }
+          );
+
+          if (subscription) {
+            this.subscriptions.set(topic, subscription);
+            console.log(`[WebSocket] Resubscribed to ${topic}`);
+          }
+        } catch (error) {
+          console.error(`[WebSocket] Failed to resubscribe to ${topic}:`, error);
+        }
+      }, delayMs);
+
+      delayMs += 100; // 각 구독 마다 100ms씩 지연
     });
   }
 

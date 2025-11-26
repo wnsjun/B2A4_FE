@@ -19,7 +19,7 @@ const PatientChat = () => {
     preQuestionAnswers,
     clearPreQuestionAnswers,
   } = useChatStore();
-  const { accessToken } = useAuthStore();
+  const { accessToken, patientId } = useAuthStore();
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const isMessageSentRef = useRef(false);
@@ -29,14 +29,16 @@ const PatientChat = () => {
   const localChatRoomId = localStorage.getItem('chatRoomId');
   const localUserId = localStorage.getItem('userId');
   const chatRoomId = storeChatRoomId || localChatRoomId;
-  const userId = storeUserId || localUserId;
+  // patientId를 우선으로 사용하고, 없으면 store 또는 localStorage에서 가져오기
+  const userId = patientId || storeUserId || localUserId;
   const doctorName = localStorage.getItem('doctorName') || '의사';
   const appointmentTime = localStorage.getItem('appointmentTime') || '';
 
   // 로컬스토리지 값을 store에 저장 및 메시지 복구
   useEffect(() => {
     if (localChatRoomId && !storeChatRoomId) {
-      setChatRoom(localChatRoomId, 'patient', localUserId || 'patient');
+      const currentUserId = patientId || localUserId || 'patient';
+      setChatRoom(localChatRoomId, 'patient', currentUserId);
 
       // localStorage에 저장된 메시지 복구
       const savedMessages = localStorage.getItem(`chat_${localChatRoomId}`);
@@ -49,7 +51,7 @@ const PatientChat = () => {
         }
       }
     }
-  }, [localChatRoomId, storeChatRoomId, localUserId, setChatRoom, setMessages]);
+  }, [localChatRoomId, storeChatRoomId, localUserId, patientId, setChatRoom, setMessages]);
 
   // WebSocket 초기화 및 채팅방 구독
   useEffect(() => {
@@ -131,6 +133,8 @@ const PatientChat = () => {
       isConnected: wsService.isConnected(),
     });
 
+    let pollTimer: ReturnType<typeof setTimeout> | null = null;
+
     // WebSocket 연결을 폴링으로 대기
     const checkAndSendMessage = () => {
       if (wsService.isConnected()) {
@@ -148,28 +152,27 @@ const PatientChat = () => {
 
         console.log('[PatientChat] Preparing to send auto message:', message);
 
-        // 약간의 딜레이 후 메시지 전송
-        const timer = setTimeout(() => {
-          try {
-            wsService.sendChatMessage(chatRoomId, message);
-            console.log('[PatientChat] Auto message sent successfully:', message);
-            // 전송 후 사전질문 답변 초기화
-            clearPreQuestionAnswers();
-          } catch (error) {
-            console.error('[PatientChat] Failed to send auto message:', error);
-          }
-        }, 300);
-
-        return () => clearTimeout(timer);
+        // 메시지 전송
+        try {
+          wsService.sendChatMessage(chatRoomId, message);
+          console.log('[PatientChat] Auto message sent successfully:', message);
+          // 전송 후 사전질문 답변 초기화
+          clearPreQuestionAnswers();
+        } catch (error) {
+          console.error('[PatientChat] Failed to send auto message:', error);
+        }
       } else {
         console.log('[PatientChat] Waiting for WebSocket connection...');
         // 500ms 후 다시 확인
-        const pollTimer = setTimeout(checkAndSendMessage, 500);
-        return () => clearTimeout(pollTimer);
+        pollTimer = setTimeout(checkAndSendMessage, 500);
       }
     };
 
-    return checkAndSendMessage();
+    checkAndSendMessage();
+
+    return () => {
+      if (pollTimer) clearTimeout(pollTimer);
+    };
   }, [chatRoomId, preQuestionAnswers, clearPreQuestionAnswers]);
 
   // 진료 종료 처리

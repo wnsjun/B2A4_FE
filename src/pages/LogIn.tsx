@@ -25,7 +25,7 @@ const LogIn = () => {
 
   const nav = useNavigate();
   const isMobile = useIsMobile();
-  const { setTokens } = useAuthStore();
+  const { setTokens, setPatientId } = useAuthStore();
 
   const handleSinup = () => {
     nav('/signup');
@@ -44,13 +44,17 @@ const LogIn = () => {
         response = await loginHospitalApi({ loginId: data.id, pwd: data.password });
       }
 
-      const { accessToken, refreshToken, hospitalId, name } = response.data;
+      const { accessToken, refreshToken, hospitalId, name, patientId } = response.data;
 
       if (hospitalId) {
         localStorage.setItem('hospitalId', String(hospitalId));
       }
       if (name) {
         localStorage.setItem('hospitalName', name);
+      }
+
+      if (patientId) {
+        setPatientId(String(patientId));
       }
 
       if (!accessToken) {
