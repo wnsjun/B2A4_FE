@@ -53,7 +53,7 @@ export const fetchDailyTake = async (date: string) => {
     try {
         const res = await instance.get(
             `${base_URL}/api/patients/medications/daily?date=${date}`)
-        //console.log("전송 성공:", res.data);
+        console.log("전송 성공:", res.data);
         return await res.data;
     } catch (error) {
         console.error("날짜별 복약 일정 조회 실패: ", error);

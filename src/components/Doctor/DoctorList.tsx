@@ -97,6 +97,16 @@ const DoctorList: React.FC<DoctorListProps> = ({onAddDoctor}) => {
         setSelectedDoctor(docInfo || null);
     }
 
+    const getLatestDate = (latestDate: string) => {
+        //const y = latestDate.split('T')[0].split('-')[0];
+        const m = latestDate.split('T')[0].split('-')[1];
+        const d = latestDate.split('T')[0].split('-')[2];
+
+        const h = latestDate.split('T')[1].split('.')[0].split(':')[0] + ":" + latestDate.split('T')[1].split('.')[0].split(':')[1];
+
+        return `${m}월 ${d}일 ${h}`;
+    }
+
     const onClickButton = () => {
         setIsButtonClicked(true);
     }
@@ -171,7 +181,7 @@ const DoctorList: React.FC<DoctorListProps> = ({onAddDoctor}) => {
 
                                         <div className="flex flex-row gap-1 text-[#666B76] text-[12px] font-medium">
                                             <p>최근 진료</p>
-                                            <p>{doctor.lastTreatment ? doctor.lastTreatment : '기록 없음'}</p>
+                                            <p>{doctor.lastTreatment ? getLatestDate(doctor.lastTreatment) : '기록 없음'}</p>
                                         </div>
                                     </div>
                                 </div>
@@ -217,7 +227,7 @@ const DoctorList: React.FC<DoctorListProps> = ({onAddDoctor}) => {
 
                                     <div className="flex flex-row gap-1 text-[#666B76] text-[12px] font-medium">
                                         <p>최근 진료</p>
-                                        <p>{selectedDoctor.lastTreatment || '기록 없음'}</p>
+                                        <p>{selectedDoctor.lastTreatment ? getLatestDate(selectedDoctor.lastTreatment) : '기록 없음'}</p>
                                     </div>
                                 </div>
                             </div>

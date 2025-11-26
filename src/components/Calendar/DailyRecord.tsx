@@ -250,7 +250,7 @@ const DailyRecord = ({selectedMonth, selectedDay, isClicked, recordData, medTrea
 
     return (
         <div className="h-[190px] flex justify-center">
-        {isClicked ? (
+        {isClicked && recordData ? (
             <div className="w-full flex flex-col gap-1">
                 <div className="w-full h-6 flex flex-row justify-between text-[#666B76] font-bold">
                     <div>{selectedMonth}월 {selectedDay}일</div>
