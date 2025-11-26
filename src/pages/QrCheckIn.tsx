@@ -63,6 +63,8 @@ const QrCheckIn = () => {
             hospitalName: response.data.hospitalName,
             specialty: response.data.specialty,
             qrGeneratedAt: response.data.qrGeneratedAt,
+            imageUrl: response.data.imageUrl,
+            profileImage: response.data.imageUrl || '/doctor.svg',
           });
         } else {
           setError('QR 코드를 불러올 수 없습니다');
