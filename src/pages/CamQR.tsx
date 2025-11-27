@@ -36,8 +36,9 @@ const CamQR: React.FC = () => {
                 if (chatRoomId && token) {
                     // localStorage에 저장
                     localStorage.setItem('chatRoomId', chatRoomId.toString());
-                    const userId = patientId || '1';
-                    localStorage.setItem('userId', userId);
+                    // API 응답에서 받은 patientId를 사용 (없으면 현재 patientId 사용)
+                    const userId = response?.data?.patientId || patientId || '1';
+                    localStorage.setItem('userId', userId.toString());
                     localStorage.setItem('accessToken', token);
 
                     // doctorName 저장

@@ -29,8 +29,8 @@ const PatientChat = () => {
   const localChatRoomId = localStorage.getItem('chatRoomId');
   const localUserId = localStorage.getItem('userId');
   const chatRoomId = storeChatRoomId || localChatRoomId;
-  // patientId를 우선으로 사용하고, 없으면 store 또는 localStorage에서 가져오기
-  const userId = patientId || storeUserId || localUserId;
+  // localStorage(API 응답에서 저장한 patientId)를 우선으로 사용
+  const userId = localUserId || patientId || storeUserId;
   const doctorName = localStorage.getItem('doctorName') || '의사';
   const appointmentTime = localStorage.getItem('appointmentTime') || '';
 
