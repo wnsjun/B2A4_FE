@@ -116,6 +116,11 @@ const PatientChat = () => {
     }
   }, [isChatClosed, navigate, chatRoomId]);
 
+  // chatRoomId가 변경될 때 isMessageSentRef 초기화
+  useEffect(() => {
+    isMessageSentRef.current = false;
+  }, [chatRoomId]);
+
   // 사전질문 답변을 기반으로 자동 메시지 전송 (WebSocket 연결 후)
   useEffect(() => {
     if (
