@@ -132,14 +132,6 @@ const PatientChat = () => {
       return;
     }
 
-    console.log('[PatientChat] Auto message check:', {
-      isMessageSent: isMessageSentRef.current,
-      chatRoomId,
-      symptom: preQuestionAnswers.symptom,
-      duration: preQuestionAnswers.duration,
-      isConnected: wsService.isConnected(),
-    });
-
     let pollTimer: ReturnType<typeof setTimeout> | null = null;
 
     // WebSocket 연결을 폴링으로 대기
