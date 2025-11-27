@@ -59,6 +59,9 @@ class WebSocketService {
             }
             useChatStore.getState().setConnected(false);
 
+            // 연결이 끊겼으므로 기존 구독 정보 초기화 (재연결 시 다시 구독하기 위함)
+            this.subscriptions.clear();
+
             // 사용자가 명시적으로 연결 해제한 경우는 재연결 안 함
             if (this.isManuallyDisconnected) {
               reject(error);
