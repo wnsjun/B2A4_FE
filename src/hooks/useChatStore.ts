@@ -107,6 +107,10 @@ export const useChatStore = create<ChatState>((set) => ({
       userId,
       isChatClosed: false,
       messages: [],
+      preQuestionAnswers: {
+        symptom: null,
+        duration: null,
+      },
     }),
 
   setDoctorId: (doctorId) =>
