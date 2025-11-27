@@ -138,11 +138,13 @@ const DoctorChat = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  // 진료 종료 후 WebSocket 연결 끊기 및 완료 페이지로 이동
+  // 진료 종료 후 해당 채팅방 구독 해제 및 완료 페이지로 이동
   useEffect(() => {
     if (isChatClosed) {
-      // WebSocket 연결 종료
-      wsService.disconnect();
+      // 해당 채팅방 구독만 해제 (WebSocket 연결은 유지하여 새 채팅방 알림 받기)
+      if (chatRoomId) {
+        wsService.unsubscribe(`/sub/chats/${chatRoomId}/messages`);
+      }
 
       const timer = setTimeout(() => {
         navigate('/doctor/consultation-completed');
@@ -150,7 +152,7 @@ const DoctorChat = () => {
 
       return () => clearTimeout(timer);
     }
-  }, [isChatClosed, navigate]);
+  }, [isChatClosed, navigate, chatRoomId]);
 
   // 진료 종료 처리
   const handleEndConsultation = async () => {
