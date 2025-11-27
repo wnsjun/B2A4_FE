@@ -56,7 +56,7 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, isOwnMessage, userRo
       } else {
         // 의사가 보내는 메시지
         return {
-          borderRadius: '12px 0 12px 12px',
+          borderRadius: '0 12px 12px 12px',
           background: '#FFFFFF',
           color: '#1A1A1A',
           padding: '8px 16px',
