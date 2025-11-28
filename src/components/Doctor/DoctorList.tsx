@@ -71,6 +71,12 @@ const DoctorList: React.FC<DoctorListProps> = ({onAddDoctor}) => {
         setPw(e.target.value);
     }
 
+    const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
+        if (e.key === 'Enter') {
+            submitPincode();
+        }
+    }
+
     const searchDoctor = useMemo(() => {
         if (name.trim() === "") {
             return doctorListData;
@@ -109,6 +115,12 @@ const DoctorList: React.FC<DoctorListProps> = ({onAddDoctor}) => {
 
     const onClickButton = () => {
         setIsButtonClicked(true);
+    }
+
+    const handleListKeyPress = (e: React.KeyboardEvent<HTMLDivElement>) => {
+        if (e.key === 'Enter' && isButtonActive) {
+            onClickButton();
+        }
     }
 
     const isButtonActive = selectDocId !== null;
@@ -153,7 +165,7 @@ const DoctorList: React.FC<DoctorListProps> = ({onAddDoctor}) => {
                     </div>
                 </div>
 
-                <div className="flex flex-col gap-6">
+                <div className="flex flex-col gap-6" onKeyPress={handleListKeyPress} tabIndex={0}>
                     {searchDoctor.length === 0 ? (
                         <div className="flex flex-col h-[350px] justify-center items-center">
                             <p className="text-[16px] text-[#666B76]">의사를 추가해주세요.</p>
@@ -233,24 +245,26 @@ const DoctorList: React.FC<DoctorListProps> = ({onAddDoctor}) => {
                             </div>
                             {isValid ? (
                                 <div className="flex flex-col w-full justify-center gap-2">
-                                    <input 
-                                        type="text" 
-                                        placeholder="의사 암호를 입력하세요"  
+                                    <input
+                                        type="text"
+                                        placeholder="의사 암호를 입력하세요"
                                         onChange={onChangePw}
+                                        onKeyPress={handleKeyPress}
                                         value={pw}
-                                        className="h-12 pl-2 placeholder-[#A9ACB2] border border-b-[#A9ACB2] border-t-0 border-x-0 focus:border-b-[#0C58FF] focus:outline-hidden"  
+                                        className="h-12 pl-2 placeholder-[#A9ACB2] border border-b-[#A9ACB2] border-t-0 border-x-0 focus:border-b-[#0C58FF] focus:outline-hidden"
                                     />
                                     <p className="font-medium text-[12px] text-[#A9ACB2] pl-2">영문, 숫자 포함 8자 이상</p>
                             </div>
                             ) : (
                                 <div className="flex flex-col w-full justify-center gap-2">
                                     <div className="flex flex-row w-full justify-end items-center">
-                                        <input 
-                                            type="text" 
-                                            placeholder="의사 암호를 입력하세요"  
+                                        <input
+                                            type="text"
+                                            placeholder="의사 암호를 입력하세요"
                                             onChange={onChangePw}
+                                            onKeyPress={handleKeyPress}
                                             value={pw}
-                                            className="h-12 pl-2 w-full placeholder-[#A9ACB2] border border-b-[#F8645D] border-t-0 border-x-0"  
+                                            className="h-12 pl-2 w-full placeholder-[#A9ACB2] border border-b-[#F8645D] border-t-0 border-x-0"
                                         />
                                         <img src="/error.svg" alt="error" className="absolute mr-2"/>
                                     </div>
