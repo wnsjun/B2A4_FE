@@ -1,73 +1,73 @@
-# React + TypeScript + Vite
+# 🤲 손빛 (Sonbit) – Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+> **농인 환자를 위한 시각 중심 의료 커뮤니케이션 서비스**
 
-Currently, two official plugins are available:
+손빛(Sonbit)은 농인(청각장애인) 환자가 병원 진료 과정에서  
+의료진과 보다 **명확하고 편안하게 소통**할 수 있도록 돕는  
+**의료 커뮤니케이션 지원 웹서비스**입니다.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+이 레포지토리는 손빛 서비스의 **프론트엔드(UI/UX)** 를 담당합니다.
 
-## React Compiler
+---
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## ✨ 서비스 개요
 
-## Expanding the ESLint configuration
+> **우리는 수어를 번역하지 않습니다.**  
+> 대신, **수어 사용자가 소통할 수 있는 환경을 만듭니다.**
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+손빛은 수어 영상 인식이나 번역 기능 없이도,  
+농인 환자가 익숙한 **시각 중심의 소통 방식**으로  
+진료 내용을 이해하고 자신의 상태를 전달할 수 있도록  
+**병원 진료 흐름을 재설계한 서비스**입니다.
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+---
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+## 🩺 주요 기능 (Frontend)
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+### 1️⃣ 진료 전 QR 체크인
+- 병원 도착 후 **QR 스캔**을 통해 진료 세션 시작  
+- **병원명 / 담당 의사 / 진료과 정보** 확인  
+- 환자–병원 간 연결 상태 명확화  
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+---
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+### 2️⃣ 사전 문진 페이지
+- 진료 시작 전 **간단한 사전 질문** 제공  
+- **터치 기반 선택 UI**  
+  - “어떻게 불편하신가요?”  
+  - “어디가 그러신가요?”  
+- **키보드 입력 없이도** 증상 전달 가능  
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+---
+
+### 3️⃣ 진료 중 소통 화면
+- 의료진 발화 내용을 **텍스트 중심으로 시각화**  
+- 환자는 **버튼 선택 또는 직접 입력(타이핑)** 을 통해 응답  
+- 진료 흐름을 **한 화면에서 직관적으로 이해** 가능  
+
+---
+
+### 4️⃣ 진료 기록 및 일정 관리
+- 진료 종료 후 **요약된 진료 내용** 확인  
+- 캘린더를 통해 **과거 진료 기록 조회** 가능  
+- 진료를 기반으로 **복약 일정 자동 추가**  
+- 개인 캘린더에서 **내 복약 일정 관리** 가능  
+- 다음 진료 일정 및 알림 확인 
+
+---
+
+## 🖥️ 기술 스택
+
+### Frontend
+- **React**
+- **TypeScript**
+- **Vite**
+- **Tailwind CSS**
+- **React Router**
+- **Axios**
+
+---
+
+> ✋ **손빛은 기술보다 사람의 언어를 먼저 생각합니다.**  
+> 더 잘 보이는 의료,  
+> 더 이해되는 진료를 목표로 합니다.
